@@ -1,0 +1,13 @@
+- [x] Write execution plan in PLAN.md
+- [x] Manifest V3 + background service worker + icons
+- [x] Provider engine: LM Studio/Ollama auto-detect, presets, custom endpoint with auth
+- [x] Smart model scoring and selection
+- [x] Streaming chat for OpenAI-compatible, Ollama, Anthropic, Gemini
+- [x] Page snapshot, DOM outline, selection context
+- [x] Element picker with selector generation
+- [x] Agent action protocol: parse, approve card, execute, undo
+- [x] Gemini-style sidepanel UI: chat, chips, composer, model pill
+- [x] Settings drawer: providers CRUD, agent toggles, theme
+- [x] Quick actions: summarize, dark mode, readability, extract
+- [x] Validate manifest and syntax-check all JS
+- [x] README with load-unpacked and usage steps
