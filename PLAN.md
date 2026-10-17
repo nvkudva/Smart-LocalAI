@@ -1,4 +1,4 @@
-# Free AI Sidebar — Plan
+# Smart Local AI Sidebar — Plan
 
 ## Goal
 Chrome MV3 side-panel extension like Claude for Chrome / Google Ask Gemini.

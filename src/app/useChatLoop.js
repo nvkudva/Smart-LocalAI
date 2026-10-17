@@ -130,7 +130,7 @@ export function useChatLoop({
           id: "notice-no-model",
           role: "assistant",
           content: "No model available. Open Settings, pick a provider, enter the API key if needed, and press Refresh.",
-          modelName: "Free AI",
+          modelName: "Smart Local AI",
           error: true,
         });
         onRequireSettings();

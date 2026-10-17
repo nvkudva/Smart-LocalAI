@@ -1,6 +1,6 @@
 <img src="public/assets/icon128.png" width="64" height="64" alt="">
 
-# Free AI Sidebar — Chat & Page Agent
+# Smart Local AI Sidebar — Chat & Page Agent
 
 Chrome side-panel extension like Claude for Chrome / Google Ask Gemini. Chat in the sidebar, and let the model edit the current page (style, content, scripts) with LM Studio, Ollama, or any LLM endpoint. The sidebar UI is built with React and Vite.
 
@@ -26,7 +26,7 @@ For development, run `bun run dev`, then rebuild before reloading the unpacked e
 - Actions: `apply_css`, `apply_js`, `edit_text`, `set_html`, `click`, `fill`, `remove`, `highlight`, `scroll`.
 - **◎ Pick** — click any element on the page to target it. **↩ Undo** rolls back edits (stack kept in page). **Page ✓** toggles whether page text/DOM outline is sent as context.
 - Suggestion chips: Summarize, Dark mode, Readability, Extract data, Remove distractions.
-- Right-click: *Ask Free AI* on selected text, *Summarize this page* on any page.
+- Right-click: *Ask Smart Local AI* on selected text, *Summarize this page* on any page.
 - Blocked on `chrome://` and Web Store pages (Chrome forbids scripting there); chat still works.
 
 ## Project layout

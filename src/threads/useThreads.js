@@ -57,12 +57,12 @@ export function useThreads({ onResetChat, onStatus }) {
       if (format === "csv") {
         const rows = [["role", "content"], ...messages.map((message) => [message.role, message.content])];
         const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
-        downloadTextFile(`freeai-${stamp}.csv`, csv, "text/csv");
+        downloadTextFile(`smart-local-ai-${stamp}.csv`, csv, "text/csv");
       } else {
         const markdown = `# ${title}\n\n${messages
-          .map((message) => `${message.role === "user" ? "## You" : "## Free AI"}\n\n${message.content}`)
+          .map((message) => `${message.role === "user" ? "## You" : "## Smart Local AI"}\n\n${message.content}`)
           .join("\n\n")}\n`;
-        downloadTextFile(`freeai-${stamp}.md`, markdown, "text/markdown");
+        downloadTextFile(`smart-local-ai-${stamp}.md`, markdown, "text/markdown");
       }
       onStatus(`Exported ${messages.length} messages.`);
     },
