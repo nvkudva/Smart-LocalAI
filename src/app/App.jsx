@@ -7,6 +7,7 @@ import PromptMenu from "../chat/prompt-menu.jsx";
 import { useEndpoint } from "../models/use-endpoint.jsx";
 import { usePageContext } from "../page/use-page-context.js";
 import { useThreads } from "../threads/use-threads.js";
+import { TEXT_ACCEPT, useAttachments } from "../chat/use-attachments.js";
 
 const SettingsDrawer = lazy(() => import("../settings/settings-drawer.jsx"));
 import {
@@ -22,19 +23,8 @@ import { createThreadId } from "../shared/extension-state.js";
 import { buildPageContext } from "../page/page-context.js";
 import { loadPersistedState, savePersistedState, takePendingPrompt } from "../shared/storage.js";
 import * as PageAgent from "../page/page-agent.js";
-import { modelCapabilities, streamChat, userMessageWithAttachments } from "../models/providers.js";
-
-const TEXT_FILE = /\.(txt|md|markdown|csv|json|js|jsx|ts|tsx|py|html|css|xml|yaml|yml|log|toml|ini|cfg|java|c|cpp|h|go|rs|rb|php|sh|sql)$/i;
-const TEXT_ACCEPT = ".txt,.md,.markdown,.csv,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.yaml,.yml,.log";
-
-function readAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error(`Couldn't read ${file.name}`));
-    reader.readAsDataURL(file);
-  });
-}
+import { modelCapabilities, userMessageWithAttachments } from "../models/providers.js";
+import { streamChat } from "../models/stream-transports.js";
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
@@ -51,7 +41,6 @@ export default function App() {
   const [notice, setNotice] = useState(null);
   const [actionCards, setActionCards] = useState([]);
   const [chunks, setChunks] = useState([]);
-  const [attachments, setAttachments] = useState([]);
   const attachRef = useRef(null);
 
   const abortRef = useRef(null);
@@ -77,79 +66,16 @@ export default function App() {
   const { threads, activeThreadId, messages } = th;
 
   const page = usePageContext({ settings, onStatus: setStatus });
+  const { attachments, setAttachments, addFiles, removeAttachment } = useAttachments({
+    active,
+    onStatus: setStatus,
+  });
 
   const caps = useMemo(
     () => (active ? modelCapabilities(active.model, active.provider.protocol) : { vision: false, pdf: false }),
     [active],
   );
 
-
-  const removeAttachment = useCallback((id) => {
-    setAttachments((current) => current.filter((file) => file.id !== id));
-  }, []);
-
-  const addFiles = useCallback(
-    async (fileList, kind) => {
-      const files = [...(fileList || [])];
-      if (!files.length || !active?.model) return;
-      const now = modelCapabilities(active.model, active.provider.protocol);
-      let count = attachments.length;
-      for (const file of files) {
-        if (count >= 5) {
-          setStatus("Up to 5 attachments per message.");
-          break;
-        }
-        if (kind === "image") {
-          if (!now.vision) {
-            setStatus("This model can't read images — switch to a vision model.");
-            continue;
-          }
-          if (!file.type.startsWith("image/")) {
-            setStatus(`Not an image: ${file.name}`);
-            continue;
-          }
-          if (file.size > 6 * 1024 * 1024) {
-            setStatus(`Too large (6MB max): ${file.name}`);
-            continue;
-          }
-          const dataUrl = await readAsDataUrl(file);
-          count += 1;
-          setAttachments((current) => [...current, { id: createThreadId(), kind: "image", name: file.name, dataUrl }]);
-        } else {
-          const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-          if (isPdf) {
-            if (!now.pdf) {
-              setStatus("PDFs need a Claude or Gemini model.");
-              continue;
-            }
-            if (file.size > 12 * 1024 * 1024) {
-              setStatus(`Too large (12MB max): ${file.name}`);
-              continue;
-            }
-            const dataUrl = await readAsDataUrl(file);
-            count += 1;
-            setAttachments((current) => [...current, { id: createThreadId(), kind: "pdf", name: file.name, dataUrl }]);
-          } else {
-            if (!TEXT_FILE.test(file.name) && !file.type.startsWith("text/")) {
-              setStatus(`Unsupported file type: ${file.name}`);
-              continue;
-            }
-            if (file.size > 200 * 1024) {
-              setStatus(`Too large (200KB max for text): ${file.name}`);
-              continue;
-            }
-            const text = await file.text();
-            count += 1;
-            setAttachments((current) => [
-              ...current,
-              { id: createThreadId(), kind: "text", name: file.name, text },
-            ]);
-          }
-        }
-      }
-    },
-    [active, attachments.length],
-  );
 
   useEffect(() => {
     document.body.dataset.theme = settings.theme || "light";
