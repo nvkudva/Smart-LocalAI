@@ -107,7 +107,7 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
   const changeEndpointField = useCallback(
     (field, value) => {
       updateEndpoint(field, value);
-      scheduleModelRefresh();
+      if (field === "baseUrl") scheduleModelRefresh();
     },
     [scheduleModelRefresh, updateEndpoint],
   );

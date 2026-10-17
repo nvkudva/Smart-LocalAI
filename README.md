@@ -33,12 +33,16 @@ For development, run `bun run dev`, then rebuild before reloading the unpacked e
 
 | Path | Job |
 |---|---|
-| [src/App.jsx](src/App.jsx) | App state, chat loop, endpoint and thread actions |
-| [src/components](src/components) | Header, menus, messages, composer, settings and action cards |
-| [src/hooks/usePageContext.js](src/hooks/usePageContext.js) | Active tab, page snapshot, picker and undo state |
-| [src/services/providers.js](src/services/providers.js) | Provider registry, Nano, detection, smart model scoring and streaming |
-| [src/services/pageAgent.js](src/services/pageAgent.js) | Page snapshot, element picker, action executor and undo |
-| [src/lib](src/lib) | Storage, endpoint state, page context and shared constants |
+| [src/app/App.jsx](src/app/App.jsx) | App state, persistence, menu and settings wiring |
+| [src/app/useChatLoop.js](src/app/useChatLoop.js) | Send, streaming, citations, page-action iterations |
+| [src/chat](src/chat) | Composer, messages, markdown, attachments, history and prompt menus |
+| [src/models/providers.js](src/models/providers.js) | Provider registry, Nano, detection, smart model scoring |
+| [src/models/streamTransports.js](src/models/streamTransports.js) | Protocol-specific streaming (OpenAI, Ollama, Anthropic, Gemini, Nano) |
+| [src/models/useEndpoint.jsx](src/models/useEndpoint.jsx) | Endpoint state, detection, model selection |
+| [src/page](src/page) | Snapshot, intent, action executor, picker and undo |
+| [src/settings](src/settings) | Settings drawer, advanced section |
+| [src/threads/useThreads.js](src/threads/useThreads.js) | Thread history CRUD and export |
+| [src/shared](src/shared) | Constants, storage, header, icons, styles, endpoint state |
 | [public/manifest.json](public/manifest.json) | MV3 manifest copied into `dist` |
 | [public/background.js](public/background.js) | Opens panel, context menus and pending prompts |
 

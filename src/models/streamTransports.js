@@ -49,7 +49,7 @@ async function streamNano(messages, onToken, signal) {
 async function streamOpenAI(provider, model, messages, onToken, signal, options = {}) {
   const base = normalizeBase(provider.baseUrl);
   const body = { model, messages, stream: true, temperature: 0.4, max_tokens: 4096 };
-  if (options.reasoningEffort) body.reasoning_effort = options.reasoningEffort;
+  if (options.reasoningEffort && !provider.local) body.reasoning_effort = options.reasoningEffort;
   const res = await fetch(base + "/chat/completions", {
     method: "POST",
     headers: authHeaders(provider),

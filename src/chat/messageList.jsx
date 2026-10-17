@@ -55,7 +55,7 @@ export default function MessageList({
       {showEmpty && <EmptyState onSuggestion={onSuggestion} providerStatus={providerStatus} />}
       <div>
         {messages.map((message) => (
-          <Message chunks={chunks} key={message.id || `${message.role}-${message.content.slice(0, 48)}`} message={message} onCitation={onCitation} />
+          <Message chunks={chunks} key={message.id || `${message.role}-${String(message.content ?? "").slice(0, 48)}`} message={message} onCitation={onCitation} />
         ))}
         {streamingMessage && <Message chunks={chunks} message={streamingMessage} onCitation={onCitation} />}
         {actionCards.map((card) => (

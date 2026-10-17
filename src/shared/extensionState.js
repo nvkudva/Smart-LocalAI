@@ -41,6 +41,7 @@ export function buildProvider(endpoint, nanoStatus) {
     id: endpoint.type,
     name: preset.name,
     protocol: preset.protocol,
+    local: Boolean(preset.local),
     baseUrl: (endpoint.baseUrl || preset.baseUrl).trim(),
     auth: preset.auth,
     apiKey: (endpoint.apiKey || "").trim(),

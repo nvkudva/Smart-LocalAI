@@ -7,9 +7,9 @@ Chat in sidebar + agent controls live page (style, content, script) via any LLM.
 ## Architecture
 - `manifest.json` — MV3, sidePanel, scripting, storage, tabs, `<all_urls>` host access (needed for localhost LLM + page injection).
 - `background.js` — service worker. Opens panel on toolbar click, relays tab updates.
-- `sidepanel.html/.css/.js` — Gemini-style UI. No build step, no framework, vanilla JS.
-- `lib/providers.js` — provider registry, detection, model scoring, streaming chat.
-- `lib/page-agent.js` — page snapshot, element picker, action executor, undo stack (injected via `chrome.scripting`).
+- `src/` — React + Vite sidebar UI (see ARCHITECTURE.md for the feature-folder layout).
+- `src/models/providers.js` — provider registry, detection, model scoring, streaming chat.
+- `src/page/` — page snapshot, element picker, action executor, undo stack (injected via `chrome.scripting`).
 
 ## Provider strategy
 - Auto-detect on open + on demand, 1.2s timeout per probe:
