@@ -43,7 +43,8 @@ export function buildProvider(endpoint, nanoStatus) {
     protocol: preset.protocol,
     local: Boolean(preset.local),
     baseUrl: (endpoint.baseUrl || preset.baseUrl).trim(),
-    auth: preset.auth,
+    auth: endpoint.auth || preset.auth,
+    authHeader: endpoint.authHeader || "",
     apiKey: (endpoint.apiKey || "").trim(),
     model: endpoint.model || "",
   };
@@ -89,7 +90,8 @@ export function normalizeSettings(settings) {
 export function threadTitle(messages) {
   const first = (messages || []).find((message) => message.role === "user");
   if (!first) return "New chat";
-  return first.content.slice(0, 40) + (first.content.length > 40 ? "…" : "");
+  const text = String(first.content ?? "");
+  return text.slice(0, 40) + (text.length > 40 ? "…" : "");
 }
 
 export function createThreadId() {
@@ -123,7 +125,7 @@ export function normalizeStoredState(data) {
     ...message,
     id: message.id || `m-${activeThreadId || "legacy"}-${index}`,
   }));
-  if (!savedThread && messages.length && !activeThreadId) activeThreadId = createThreadId();
+  if (!savedThread) activeThreadId = messages.length ? createThreadId() : "";
 
   return {
     endpoint,

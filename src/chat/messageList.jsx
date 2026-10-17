@@ -47,7 +47,9 @@ export default function MessageList({
 
   useEffect(() => {
     const main = mainRef.current;
-    if (main) main.scrollTop = main.scrollHeight;
+    if (!main) return;
+    const nearBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 120;
+    if (nearBottom) main.scrollTop = main.scrollHeight;
   });
 
   return (
@@ -55,7 +57,7 @@ export default function MessageList({
       {showEmpty && <EmptyState onSuggestion={onSuggestion} providerStatus={providerStatus} />}
       <div>
         {messages.map((message) => (
-          <Message chunks={chunks} key={message.id || `${message.role}-${String(message.content ?? "").slice(0, 48)}`} message={message} onCitation={onCitation} />
+          <Message chunks={message.chunks ?? chunks} key={message.id || `${message.role}-${String(message.content ?? "").slice(0, 48)}`} message={message} onCitation={onCitation} />
         ))}
         {streamingMessage && <Message chunks={chunks} message={streamingMessage} onCitation={onCitation} />}
         {actionCards.map((card) => (

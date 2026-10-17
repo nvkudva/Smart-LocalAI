@@ -30,11 +30,15 @@ export async function loadPersistedState() {
 
 export async function savePersistedState(state) {
   const data = stateForStorage(state);
-  if (hasChromeStorage()) {
-    await chrome.storage.local.set(data);
-    return;
+  try {
+    if (hasChromeStorage()) {
+      await chrome.storage.local.set(data);
+      return;
+    }
+    localStorage.setItem("freeai.react-state", JSON.stringify(data));
+  } catch {
+    /* storage full or unavailable — keep running in memory */
   }
-  localStorage.setItem("freeai.react-state", JSON.stringify(data));
 }
 
 export async function takePendingPrompt() {

@@ -27,8 +27,8 @@ export default function PromptMenu({ customPrompts, canImage, canDoc, docHint, o
           <div className="menu-section">Prompts</div>
         </>
       )}
-      {prompts.map((prompt) => (
-        <button className="menu-item" key={`${prompt.name}-${prompt.text}`} onClick={() => onSelect(prompt.text)} type="button">
+      {prompts.map((prompt, index) => (
+        <button className="menu-item" key={`${index}-${prompt.name}`} onClick={() => onSelect(prompt.text)} type="button">
           {prompt.custom && <Icons.Sparkle size={13} />}
           <span>{prompt.name}</span>
         </button>

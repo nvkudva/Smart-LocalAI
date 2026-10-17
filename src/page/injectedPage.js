@@ -5,7 +5,7 @@ export function snapshotInPage() {
     if (!el || el === document.body) return "body";
     if (el.id) return "#" + CSS.escape(el.id);
     const testId = el.getAttribute?.("data-testid");
-    if (testId) return '[data-testid="' + testId + '"]';
+    if (testId) return '[data-testid="' + CSS.escape(testId) + '"]';
     const parts = [];
     let node = el;
     while (node && node !== document.body && parts.length < 5) {
@@ -42,7 +42,7 @@ export function snapshotInPage() {
 export function executeInPage(action) {
   window.__freeAiUndo = window.__freeAiUndo || [];
   function find(selector) {
-    if (!selector) return document.body;
+    if (!selector) return null;
     try { return document.querySelector(selector); } catch { return null; }
   }
   function describe(el) {
@@ -135,10 +135,12 @@ export function undoInPage() {
       }
     } else if (last.kind === "html") {
       const el = document.querySelector(last.selector);
-      if (el) el.innerHTML = last.before;
+      if (!el) return { ok: false, message: "Undid " + last.kind + " but the element is gone." };
+      el.innerHTML = last.before;
     } else if (last.kind === "style-attr") {
       const el = document.querySelector(last.selector);
-      if (el) el.setAttribute("style", last.before);
+      if (!el) return { ok: false, message: "Undid " + last.kind + " but the element is gone." };
+      el.setAttribute("style", last.before);
     } else if (last.kind === "remove") {
       const parent = document.querySelector(last.parentSelector) || document.body;
       const temp = document.createElement("div");
@@ -163,7 +165,7 @@ export function pickerInPage() {
     function selectorFor(el) {
       if (el.id) return "#" + CSS.escape(el.id);
       const testId = el.getAttribute?.("data-testid");
-      if (testId) return '[data-testid="' + testId + '"]';
+      if (testId) return '[data-testid="' + CSS.escape(testId) + '"]';
       const parts = [];
       let node = el;
       while (node && node !== document.body && parts.length < 5) {
@@ -217,12 +219,27 @@ export function scrollToChunkInPage(text) {
   try {
     const needle = String(text || "").slice(0, 60);
     if (!needle) return { ok: false, message: "Empty citation" };
-    const found = window.find(needle, false, false, true);
-    if (!found) return { ok: false, message: "Text not found on page" };
-    const node = window.getSelection().anchorNode;
-    const el = node?.parentElement ? node.parentElement : document.body;
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
-    return { ok: true, message: "Scrolled to citation" };
+    if (typeof window.find === "function") {
+      const found = window.find(needle, false, false, true);
+      if (found) {
+        const node = window.getSelection().anchorNode;
+        const el = node?.parentElement ? node.parentElement : document.body;
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        return { ok: true, message: "Scrolled to citation" };
+      }
+    }
+    const short = needle.slice(0, 30);
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      if (node.textContent.includes(short)) {
+        const el = node.parentElement || document.body;
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        return { ok: true, message: "Scrolled to citation" };
+      }
+      node = walker.nextNode();
+    }
+    return { ok: false, message: "Text not found on page" };
   } catch (e) {
     return { ok: false, message: String(e?.message || e) };
   }

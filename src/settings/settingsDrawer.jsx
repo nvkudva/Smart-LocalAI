@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NANO_LABELS } from "../shared/constants.js";
 import AdvancedSection from "./advancedSection.jsx";
 import { PROVIDER_TYPES } from "../models/providers.js";
@@ -41,6 +42,14 @@ export default function SettingsDrawer({
   onClearHistory,
 }) {
   const nanoEnabled = endpoint.useNano && nanoStatus === "available";
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   return (
     <aside className="settings">

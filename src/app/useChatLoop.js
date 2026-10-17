@@ -122,7 +122,7 @@ export function useChatLoop({
   );
 
   const sendText = useCallback(
-    async (rawText) => {
+    async (rawText, mode) => {
       const text = String(rawText || "").trim();
       if ((!text && !attachments.length) || busy) return;
       if (!active?.model) {
@@ -166,7 +166,7 @@ export function useChatLoop({
       const abort = new AbortController();
       abortRef.current = abort;
 
-      const agentIntent = isPageActionIntent(text);
+      const agentIntent = mode === "agent" ? true : mode === "chat" ? false : isPageActionIntent(text);
       const baseSystem =
         active.provider.protocol === "nano"
           ? agentIntent
@@ -214,7 +214,11 @@ export function useChatLoop({
           previousSignature = signature;
 
           const results = [];
-          for (const action of actions.slice(0, 6)) results.push(await runAction(action));
+          for (const action of actions.slice(0, 6)) {
+            if (abort.signal.aborted) break;
+            results.push(await runAction(action));
+          }
+          if (abort.signal.aborted) break;
           const refreshedSnapshot = await page.refreshPage();
           requestMessages = [
             ...requestMessages,
@@ -242,6 +246,7 @@ export function useChatLoop({
               role: "assistant",
               content: visibleText,
               modelName: `${active.provider.name} · ${active.model}`,
+              chunks: context.chunks,
             },
           ]);
         }
@@ -308,7 +313,11 @@ export function useChatLoop({
     resetChat,
     resolveAction,
     sendText,
-    stopStream: () => abortRef.current?.abort(),
+    stopStream: () => {
+      abortRef.current?.abort();
+      for (const resolve of actionResolversRef.current.values()) resolve(false);
+      actionResolversRef.current.clear();
+    },
     streamingMessage,
   };
 }

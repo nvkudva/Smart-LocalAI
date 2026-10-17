@@ -116,7 +116,8 @@ export default function App() {
   const fillPromptInput = useCallback(
     (promptText) => {
       const selection = page.snapshot?.selection || "";
-      setInput(String(promptText).split("{selection}").join(selection).split("{page}").join(selection));
+      const pageText = page.snapshot?.text || selection;
+      setInput(String(promptText).split("{selection}").join(selection).split("{page}").join(pageText));
       setOpenMenu(null);
     },
     [page.snapshot],
@@ -152,7 +153,7 @@ export default function App() {
         onApplyAction={(id) => chat.resolveAction(id, true)}
         onCitation={chat.handleCitation}
         onSkipAction={(id) => chat.resolveAction(id, false)}
-        onSuggestion={(suggestion) => chat.sendText(suggestion.prompt)}
+        onSuggestion={(suggestion) => chat.sendText(suggestion.prompt, suggestion.mode)}
         providerStatus={ep.providerSummary}
         streamingMessage={chat.streamingMessage}
       />
@@ -177,9 +178,7 @@ export default function App() {
         }
         onInputChange={(value) => {
           if (value === "/") {
-            setInput("");
             setOpenMenu("prompts");
-            return;
           }
           setInput(value);
         }}

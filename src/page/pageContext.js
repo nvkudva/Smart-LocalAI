@@ -1,4 +1,4 @@
-export function chunkPageText(text, maxChunks = 12, chunkSize = 600) {
+export function chunkPageText(text, maxChunks = 14, chunkSize = 600) {
   const chunks = [];
   const clean = String(text || "").replace(/\n{3,}/g, "\n\n");
   for (let index = 0; index < clean.length && chunks.length < maxChunks; index += chunkSize) {

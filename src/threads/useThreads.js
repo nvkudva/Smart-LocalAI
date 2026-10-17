@@ -29,6 +29,7 @@ export function useThreads({ onResetChat, onStatus }) {
 
   const deleteThread = useCallback(
     (threadId) => {
+      if (!window.confirm("Delete this chat? This can't be undone.")) return;
       setThreads((current) => current.filter((thread) => thread.id !== threadId));
       if (threadId === activeThreadId) {
         setActiveThreadId("");
@@ -40,6 +41,7 @@ export function useThreads({ onResetChat, onStatus }) {
   );
 
   const clearAllThreads = useCallback(() => {
+    if (!window.confirm("Clear all chat history? This can't be undone.")) return;
     setThreads([]);
     setActiveThreadId("");
     setMessages([]);
@@ -60,7 +62,7 @@ export function useThreads({ onResetChat, onStatus }) {
         downloadTextFile(`smartlocalai-${stamp}.csv`, csv, "text/csv");
       } else {
         const markdown = `# ${title}\n\n${messages
-          .map((message) => `${message.role === "user" ? "## You" : "## Smart LocalAI"}\n\n${message.content}`)
+          .map((message) => `${message.role === "user" ? "## You" : "## Smart LocalAI"}\n\n${String(message.content ?? "")}`)
           .join("\n\n")}\n`;
         downloadTextFile(`smartlocalai-${stamp}.md`, markdown, "text/markdown");
       }

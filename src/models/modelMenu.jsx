@@ -41,7 +41,7 @@ export default function ModelMenu({
           )}
         </button>
 
-        <div className="menu-section">{provider.name}</div>
+        <div className="menu-section">{provider?.name || "Model"}</div>
         {ranked.length === 0 ? (
           <div className="menu-empty">
             {isNano ? "Built-in model unavailable." : "No models yet — open Settings and press Refresh."}

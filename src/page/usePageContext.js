@@ -67,9 +67,10 @@ export function usePageContext({ settings, onStatus }) {
   }, []);
 
   const undo = useCallback(async () => {
-    if (!tabId) return;
+    const target = tabIdRef.current ?? tabId;
+    if (!target) return null;
     try {
-      const result = await PageAgent.undo(tabId);
+      const result = await PageAgent.undo(target);
       onStatus(result.message);
       return result;
     } catch (error) {

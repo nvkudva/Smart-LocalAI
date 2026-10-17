@@ -1,6 +1,18 @@
 import { authHeaders, nanoAPI, nanoLanguageOptions, normalizeBase } from "./providers.js";
 
+function drainLines(buffer, parseEvent, onToken) {
+  let full = "";
+  const lines = buffer.split("\n");
+  const rest = lines.pop() || "";
+  for (const line of lines) {
+    const text = parseEvent(line.trim());
+    if (text) { full += text; if (onToken) onToken(text); }
+  }
+  return { full, rest };
+}
+
 async function readSse(res, parseEvent, onToken) {
+  if (!res.body) throw new Error("No response stream");
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -9,12 +21,14 @@ async function readSse(res, parseEvent, onToken) {
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-    for (const line of lines) {
-      const text = parseEvent(line.trim());
-      if (text) { full += text; if (onToken) onToken(text); }
-    }
+    const drained = drainLines(buffer, parseEvent, onToken);
+    full += drained.full;
+    buffer = drained.rest;
+  }
+  buffer += decoder.decode();
+  if (buffer.trim()) {
+    const text = parseEvent(buffer.trim());
+    if (text) { full += text; if (onToken) onToken(text); }
   }
   return full;
 }
@@ -48,7 +62,13 @@ async function streamNano(messages, onToken, signal) {
 
 async function streamOpenAI(provider, model, messages, onToken, signal, options = {}) {
   const base = normalizeBase(provider.baseUrl);
-  const body = { model, messages, stream: true, temperature: 0.4, max_tokens: 4096 };
+  const reasoningModel = /^(o1|o3|o4|gpt-5)/.test(String(model || ""));
+  const body = { model, messages, stream: true };
+  if (reasoningModel) body.max_completion_tokens = 4096;
+  else {
+    body.temperature = 0.4;
+    body.max_tokens = 4096;
+  }
   if (options.reasoningEffort && !provider.local) body.reasoning_effort = options.reasoningEffort;
   const res = await fetch(base + "/chat/completions", {
     method: "POST",

@@ -48,7 +48,7 @@ export default function Composer({
     if (!textarea) return;
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 140)}px`;
-  });
+  }, [input, attachments?.length, status]);
 
   const safe = settings.safeMode;
 
@@ -64,6 +64,7 @@ export default function Composer({
         {sharingBar}
 
         <textarea
+          aria-label="Message input"
           onChange={(event) => onInputChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {

@@ -90,7 +90,7 @@ export default function AdvancedSection({
             <div className="menu-empty">None yet.</div>
           ) : (
             customPrompts.map((prompt, index) => (
-              <div className="prompt-row" key={prompt}>
+              <div className="prompt-row" key={`${index}-${String(prompt).slice(0, 40)}`}>
                 <span>{prompt}</span>
                 <button aria-label="Delete prompt" className="hist-del" onClick={() => onDeletePrompt(index)} type="button">
                   <Icons.Trash />

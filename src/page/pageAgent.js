@@ -40,7 +40,7 @@ function isRestrictedPage(url) {
 
   function parseAgentActions(text) {
     const actions = [];
-    const fence = /```(?:agent|json|tool)?\s*\n([\s\S]*?)```/g;
+    const fence = /```(?:agent|json|tool)?[ \t]*\n?([\s\S]*?)```/g;
     for (let match = fence.exec(text); match !== null; match = fence.exec(text)) {
       try {
         const parsed = JSON.parse(match[1].trim());
@@ -52,7 +52,7 @@ function isRestrictedPage(url) {
   }
 
   function stripAgentBlocks(text) {
-    return text.replace(/```(?:agent|json|tool)?\s*\n[\s\S]*?```/g, (block) => {
+    return String(text ?? "").replace(/```(?:agent|json|tool)?[ \t]*\n?[\s\S]*?```/g, (block) => {
       try {
         const inner = block.replace(/```[a-z]*\s*\n?/, "").replace(/```$/, "");
         const parsed = JSON.parse(inner.trim());

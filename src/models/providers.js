@@ -10,6 +10,7 @@ const PRESETS = [
     lmstudio: { name: "LM Studio", protocol: "openai", baseUrl: "http://localhost:1234/v1", auth: "none", local: true },
     ollama: { name: "Ollama", protocol: "ollama", baseUrl: "http://localhost:11434", auth: "none", local: true },
     anthropic: { name: "Anthropic", protocol: "anthropic", baseUrl: "https://api.anthropic.com", auth: "x-api-key" },
+    gemini: { name: "Gemini", protocol: "gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta", auth: "none" },
     openai: { name: "OpenAI", protocol: "openai", baseUrl: "https://api.openai.com/v1", auth: "bearer" },
     deepseek: { name: "DeepSeek", protocol: "openai", baseUrl: "https://api.deepseek.com/v1", auth: "bearer" },
     custom: { name: "Custom", protocol: "openai", baseUrl: "", auth: "bearer" }

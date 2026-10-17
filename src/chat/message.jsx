@@ -4,10 +4,11 @@ import * as Icons from "../shared/icons.jsx";
 import Markdown from "./markdown.jsx";
 
 function actionSummary(action) {
+  const safe = action && typeof action === "object" ? action : {};
   return {
-    title: action.action,
-    target: action.selector || "page",
-    payload: String(action.css || action.js || action.value || "").slice(0, 900),
+    title: safe.action || "unknown",
+    target: safe.selector || "page",
+    payload: String(safe.css || safe.js || safe.value || "").slice(0, 900),
   };
 }
 
@@ -32,16 +33,32 @@ export function ActionCard({ card, onApply, onSkip }) {
   );
 }
 
+function copyText(event, text) {
+  const button = event.currentTarget;
+  const done = (label) => {
+    button.textContent = label;
+    window.setTimeout(() => {
+      button.textContent = "Copy";
+    }, 1200);
+  };
+  navigator.clipboard
+    ?.writeText(String(text ?? ""))
+    .then(() => done("Copied"))
+    .catch(() => done("Copy failed"));
+  if (!navigator.clipboard) done("Copy failed");
+}
+
 export const Message = memo(function Message({ message, chunks, onCitation }) {
   if (message.role === "user") {
     return (
       <div className="msg user">
-        <div className="bubble">{message.content}</div>
+        <div className="bubble">{String(message.content ?? "")}</div>
       </div>
     );
   }
 
-  const visibleText = stripAgentBlocks(message.content) || message.content;
+  const sourceText = String(message.content ?? "");
+  const visibleText = stripAgentBlocks(sourceText) || sourceText;
   return (
     <div className={`msg ai ${message.error ? "error" : ""}`}>
       <div className="ai-label">
@@ -55,7 +72,7 @@ export const Message = memo(function Message({ message, chunks, onCitation }) {
       </div>
       {!message.streaming && (
         <div className="msg-actions">
-          <button className="mini-btn" onClick={() => navigator.clipboard.writeText(message.content)} type="button">
+          <button className="mini-btn" onClick={(event) => copyText(event, message.content)} type="button">
             Copy
           </button>
         </div>

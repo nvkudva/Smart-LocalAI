@@ -21,7 +21,7 @@ export default function Markdown({ text, chunks, onCitation }) {
     blocks.push(
       <ul key={`ul-${blocks.length}`}>
         {list.map((item, index) => (
-          <li key={item}>{renderInline(item, chunks, onCitation, `li-${blocks.length}-${index}`)}</li>
+          <li key={`li-${blocks.length}-${index}`}>{renderInline(item, chunks, onCitation, `li-${blocks.length}-${index}`)}</li>
         ))}
       </ul>,
     );

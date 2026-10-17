@@ -1,7 +1,7 @@
 // Deterministic intent split: page-edit requests go to the agent flow,
 // everything else stays a plain chat (no action parsing, single generation).
 const EDIT_VERB =
-  "(make|change|set|hide|show|remove|delete|click|press|tap|fill|scroll|move|resize|enlarge|shrink|highlight|restyle|redesign|replace|rename|bold|italicize|underline|darken|lighten|add|insert|translate|fix|improve)";
+  "(make|change|set|hide|show|remove|delete|click|press|tap|fill|scroll|move|resize|enlarge|shrink|highlight|restyle|redesign|replace|rename|bold|italicize|underline|darken|lighten|add|insert|translate|fix|improve|open|select|type|close|dismiss|submit)";
 const TARGET =
   "(page|heading|headings|title|text|button|buttons|link|links|color|colour|background|font|banner|popup|popups|sidebar|menu|image|images|header|footer|element|cta|form|input|inputs|section|sections|paragraph|logo|icon|icons|widget|widgets|cookie|cookies|ad|ads|theme|layout|style|css|distractions|readability)";
 

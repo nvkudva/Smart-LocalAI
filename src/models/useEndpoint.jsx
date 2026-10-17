@@ -55,8 +55,11 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
     if (loaded) detectProviders();
   }, [detectProviders, loaded]);
 
+  const refreshIdRef = useRef(0);
   const refreshModels = useCallback(
     async (nextEndpoint = endpointRef.current) => {
+      const requestId = refreshIdRef.current + 1;
+      refreshIdRef.current = requestId;
       const provider = buildProvider(nextEndpoint, nanoStatus);
       if (!provider.baseUrl) {
         setEndpointError("URL required for a custom endpoint.");
@@ -66,11 +69,13 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
       setEndpointError("");
       try {
         const models = await listModels(provider);
+        if (refreshIdRef.current !== requestId) return;
         setEndpoint((current) => ({ ...current, models }));
       } catch (error) {
+        if (refreshIdRef.current !== requestId) return;
         setEndpointError(`✗ ${error.message}`);
       } finally {
-        setEndpointLoading(false);
+        if (refreshIdRef.current === requestId) setEndpointLoading(false);
       }
     },
     [nanoStatus],
@@ -88,18 +93,17 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
   const changeEndpointType = useCallback(
     (type) => {
       const preset = PROVIDER_TYPES[type] || PROVIDER_TYPES.custom;
-      setEndpoint((current) => {
-        const next = {
-          ...current,
-          type,
-          baseUrl: preset.baseUrl,
-          models: [],
-          model: current.remembered[type] || "",
-        };
-        endpointRef.current = next;
-        return next;
-      });
-      window.setTimeout(() => refreshModels(endpointRef.current), 0);
+      const current = endpointRef.current;
+      const next = {
+        ...current,
+        type,
+        baseUrl: preset.baseUrl,
+        models: [],
+        model: current.remembered[type] || "",
+      };
+      endpointRef.current = next;
+      setEndpoint(next);
+      window.setTimeout(() => refreshModels(next), 0);
     },
     [refreshModels],
   );

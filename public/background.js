@@ -36,22 +36,43 @@ chrome.runtime.onStartup.addListener(setupMenus);
 
 let pendingPrompt = null;
 
+async function stashPrompt(prompt) {
+  pendingPrompt = prompt;
+  try {
+    if (prompt) await chrome.storage.session.set({ pendingPrompt: prompt });
+    else await chrome.storage.session.remove("pendingPrompt");
+  } catch {
+    /* session storage unavailable — memory only */
+  }
+}
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab?.windowId) return;
   const build = SELECTION_ACTIONS[info.menuItemId];
   if (build) {
-    pendingPrompt = build(info.selectionText || "");
-  }
-  if (info.menuItemId === "freeai-summarize") {
-    pendingPrompt = "Summarize this page: key points, then one-line TL;DR.";
+    await stashPrompt(build(info.selectionText || ""));
+  } else if (info.menuItemId === "freeai-summarize") {
+    await stashPrompt("Summarize this page: key points, then one-line TL;DR.");
+  } else {
+    return;
   }
   await chrome.sidePanel.open({ windowId: tab.windowId });
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "TAKE_PENDING_PROMPT") {
-    sendResponse({ prompt: pendingPrompt });
-    pendingPrompt = null;
+    (async () => {
+      let prompt = pendingPrompt;
+      try {
+        const stored = await chrome.storage.session.get("pendingPrompt");
+        if (stored?.pendingPrompt) prompt = stored.pendingPrompt;
+        await chrome.storage.session.remove("pendingPrompt");
+      } catch {
+        /* fall back to memory */
+      }
+      pendingPrompt = null;
+      sendResponse({ prompt });
+    })();
     return true;
   }
   if (message.type === "OPEN_PANEL" && sender.tab) {

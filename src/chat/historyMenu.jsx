@@ -1,18 +1,19 @@
 import * as Icons from "../shared/icons.jsx";
 
 export default function HistoryMenu({ threads, activeThreadId, query, onQueryChange, onOpen, onDelete, onExport }) {
-  const normalizedQuery = query.trim().toLowerCase();
-  const visibleThreads = threads.filter((thread) => {
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  const visibleThreads = (threads || []).filter((thread) => {
     if (!normalizedQuery) return true;
     return (
-      thread.title.toLowerCase().includes(normalizedQuery) ||
-      (thread.messages || []).some((message) => message.content.toLowerCase().includes(normalizedQuery))
+      String(thread.title ?? "").toLowerCase().includes(normalizedQuery) ||
+      (thread.messages || []).some((message) => String(message.content ?? "").toLowerCase().includes(normalizedQuery))
     );
   });
 
   return (
     <div className="menu history-menu">
       <input
+        aria-label="Search chats"
         className="menu-search"
         onChange={(event) => onQueryChange(event.target.value)}
         placeholder="Search chats…"
