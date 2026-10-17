@@ -154,6 +154,17 @@ const PRESETS = [
 
   const NANO_MODEL = "Gemini Nano";
 
+  // Current Prompt API takes expectedInputs/expectedOutputs; older builds used
+  // expectedInputLanguages/expectedOutputLanguages. Unknown keys are ignored.
+  function nanoLanguageOptions() {
+    return {
+      expectedInputs: [{ type: "text", languages: ["en"] }],
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+      expectedInputLanguages: ["en"],
+      expectedOutputLanguages: ["en"],
+    };
+  }
+
   // Chrome built-in AI (Prompt API). New namespace first, legacy second.
   function nanoAPI() {
     if (typeof LanguageModel !== "undefined") return LanguageModel;
@@ -167,7 +178,7 @@ const PRESETS = [
     if (!LM || typeof LM.availability !== "function") return "unsupported";
     try {
       const status = await Promise.race([
-        LM.availability({ expectedOutputLanguages: ["en"] }),
+        LM.availability(nanoLanguageOptions()),
         new Promise((resolve) => setTimeout(() => resolve("timeout"), 5000)),
       ]);
       if (status === "available" || status === "downloadable" || status === "downloading") return status;
@@ -235,6 +246,7 @@ export {
   PRESETS,
   PROVIDER_TYPES,
   NANO_MODEL,
+  nanoLanguageOptions,
   nanoAPI,
   nanoAvailability,
   normalizeBase,

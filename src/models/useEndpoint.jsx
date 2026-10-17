@@ -7,7 +7,7 @@ import {
   isNanoEnabled,
   resolveActive,
 } from "../shared/extensionState.js";
-import { detectLocal, listModels, nanoAvailability, normalizeBase, pickSmartModel } from "./providers.js";
+import { detectLocal, listModels, nanoAvailability, nanoLanguageOptions, normalizeBase, pickSmartModel } from "./providers.js";
 
 export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
   const [endpoint, setEndpoint] = useState(() => createDefaultEndpoint());
@@ -149,7 +149,7 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
     setNanoStatus("downloading");
     try {
       const languageModel = window.LanguageModel || window.ai?.languageModel;
-      const session = await languageModel.create({ expectedOutputLanguages: ["en"] });
+      const session = await languageModel.create(nanoLanguageOptions());
       if (typeof session?.destroy === "function") session.destroy();
     } catch (error) {
       onStatus(`Model download failed: ${error.message}`);

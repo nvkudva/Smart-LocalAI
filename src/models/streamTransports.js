@@ -1,4 +1,4 @@
-import { authHeaders, nanoAPI, normalizeBase } from "./providers.js";
+import { authHeaders, nanoAPI, nanoLanguageOptions, normalizeBase } from "./providers.js";
 
 async function readSse(res, parseEvent, onToken) {
   const reader = res.body.getReader();
@@ -27,7 +27,7 @@ async function streamNano(messages, onToken, signal) {
   const context = history.slice(0, -1)
     .map((m) => ({ role: m.role === "assistant" ? "assistant" : m.role, content: String(m.content || "") }))
     .filter((m) => m.content);
-  const session = await LM.create({ initialPrompts: context, signal, expectedOutputLanguages: ["en"] });
+  const session = await LM.create({ initialPrompts: context, signal, ...nanoLanguageOptions() });
   try {
     const stream = session.promptStreaming(String(last.content || ""), { signal });
     let full = "";
