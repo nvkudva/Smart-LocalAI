@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Smart-LocalAI — Chat & Page Agent",
-  "short_name": "Smart-LocalAI",
+  "name": "Smart LocalAI — Chat & Page Agent",
+  "short_name": "Smart LocalAI",
   "version": "1.0.0",
   "description": "Chat in a Gemini-style sidebar and control the current page (style, content, scripts) with LM Studio, Ollama, or any LLM endpoint.",
   "minimum_chrome_version": "116",
@@ -12,7 +12,7 @@
     "128": "assets/icon128.png"
   },
   "action": {
-    "default_title": "Smart-LocalAI (Ctrl/Cmd+Shift+Y)",
+    "default_title": "Smart LocalAI (Ctrl/Cmd+Shift+Y)",
     "default_icon": {
       "16": "assets/icon16.png",
       "32": "assets/icon32.png"
@@ -30,7 +30,7 @@
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       },
-      "description": "Open Smart-LocalAI"
+      "description": "Open Smart LocalAI"
     }
   },
   "permissions": ["sidePanel", "storage", "scripting", "activeTab", "tabs", "contextMenus"],

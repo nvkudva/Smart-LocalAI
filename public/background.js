@@ -11,7 +11,7 @@ const SELECTION_ACTIONS = {
 
 function setupMenus() {
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({ id: "freeai-sel", title: "Smart-LocalAI", contexts: ["selection"] });
+    chrome.contextMenus.create({ id: "freeai-sel", title: "Smart LocalAI", contexts: ["selection"] });
     const items = [
       ["freeai-explain", "Explain selection"],
       ["freeai-rewrite", "Rewrite selection"],
@@ -25,7 +25,7 @@ function setupMenus() {
     }
     chrome.contextMenus.create({
       id: "freeai-summarize",
-      title: "Summarize this page with Smart-LocalAI",
+      title: "Summarize this page with Smart LocalAI",
       contexts: ["page"]
     });
   });

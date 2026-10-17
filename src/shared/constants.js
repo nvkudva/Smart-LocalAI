@@ -56,7 +56,7 @@ export const SUGGESTIONS = [
 ];
 
 export const SYSTEM_CHAT =
-  "You are Smart-LocalAI, a helpful assistant in a browser sidebar. Be concise. Use markdown sparingly.";
+  "You are Smart LocalAI, a helpful assistant in a browser sidebar. Be concise. Use markdown sparingly.";
 
 export const SYSTEM_AGENT = `${SYSTEM_CHAT}
 
@@ -67,7 +67,7 @@ You can edit the current web page. To act, output ONE fenced block per action li
 Actions: apply_css {css} (adds to a single <style id=free-ai-style>, cumulative), apply_js {js} (runs JS, return value shown to you), edit_text {selector,value}, set_html {selector,value}, click {selector}, fill {selector,value}, remove {selector}, highlight {selector}, scroll {selector?|value}.
 Rules: prefer apply_css for styling. Use selectors from the DOM outline. Explain briefly before blocks, keep prose short. After tool results, confirm what changed in one sentence. Never invent selectors when outline lacks target; say what you need or use the picked element.`;
 
-export const SYSTEM_NANO = `You are Smart-LocalAI in a browser sidebar. Be concise. Cite page facts like [1].
+export const SYSTEM_NANO = `You are Smart LocalAI in a browser sidebar. Be concise. Cite page facts like [1].
 Page edits: output one \`\`\`agent block per action: {"action":"apply_css","css":"..."}. Actions: apply_css, edit_text, set_html, click, fill, remove, highlight, scroll. Confirm briefly after results.`;
 
 export const NANO_LABELS = {
