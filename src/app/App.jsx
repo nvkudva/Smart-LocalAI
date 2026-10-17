@@ -10,21 +10,10 @@ import { useThreads } from "../threads/use-threads.js";
 import { TEXT_ACCEPT, useAttachments } from "../chat/use-attachments.js";
 
 const SettingsDrawer = lazy(() => import("../settings/settings-drawer.jsx"));
-import {
-  DEFAULT_SETTINGS,
-  SYSTEM_AGENT,
-  SYSTEM_CHAT,
-  SYSTEM_NANO,
-  THINKING_EFFORT,
-  THINKING_HINTS,
-} from "../shared/constants.js";
-import { isPageActionIntent } from "../page/intent.js";
-import { createThreadId } from "../shared/extension-state.js";
-import { buildPageContext } from "../page/page-context.js";
-import { loadPersistedState, savePersistedState, takePendingPrompt } from "../shared/storage.js";
-import * as PageAgent from "../page/page-agent.js";
-import { modelCapabilities, userMessageWithAttachments } from "../models/providers.js";
-import { streamChat } from "../models/stream-transports.js";
+import { DEFAULT_SETTINGS } from "../shared/constants.js";
+import { loadPersistedState, savePersistedState } from "../shared/storage.js";
+import { modelCapabilities } from "../models/providers.js";
+import { useChatLoop } from "./use-chat-loop.js";
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
@@ -35,28 +24,13 @@ export default function App() {
   const [historyQuery, setHistoryQuery] = useState("");
   const [modelExpanded, setModelExpanded] = useState(false);
   const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
-  const [streamingMessage, setStreamingMessage] = useState(null);
-  const [notice, setNotice] = useState(null);
-  const [actionCards, setActionCards] = useState([]);
-  const [chunks, setChunks] = useState([]);
   const attachRef = useRef(null);
-
-  const abortRef = useRef(null);
-  const actionResolversRef = useRef(new Map());
-  const lastTldrRef = useRef("");
-  const pendingHandledRef = useRef(false);
-  const sendTextRef = useRef(null);
-  const streamFlushRef = useRef(0);
-  const streamBufferRef = useRef("");
+  const chatLoopRef = useRef(null);
 
   const closeMenu = useCallback(() => setOpenMenu(null), []);
   const resetChatArtifacts = useCallback(() => {
-    setActionCards([]);
-    setStreamingMessage(null);
-    setNotice(null);
-    setChunks([]);
+    chatLoopRef.current?.resetChat();
     setOpenMenu(null);
   }, []);
 
@@ -75,7 +49,24 @@ export default function App() {
     () => (active ? modelCapabilities(active.model, active.provider.protocol) : { vision: false, pdf: false }),
     [active],
   );
+  const chat = useChatLoop({
+    active,
+    activeThreadId,
+    attachments,
+    loaded,
+    messages,
+    onClearInput: () => setInput(""),
+    onRequireSettings: () => setSettingsOpen(true),
+    onStatus: setStatus,
+    page,
+    setAttachments,
+    settings,
+    threadsApi: th,
+  });
 
+  useEffect(() => {
+    chatLoopRef.current = chat;
+  }, [chat]);
 
   useEffect(() => {
     document.body.dataset.theme = settings.theme || "light";
@@ -121,247 +112,6 @@ export default function App() {
     return () => document.removeEventListener("click", closeMenus);
   }, []);
 
-  const updateActionCard = useCallback((id, patch) => {
-    setActionCards((current) => current.map((card) => (card.id === id ? { ...card, ...patch } : card)));
-  }, []);
-
-  const resolveAction = useCallback(
-    (id, apply) => {
-      const resolve = actionResolversRef.current.get(id);
-      if (!resolve) return;
-      actionResolversRef.current.delete(id);
-      if (!apply) updateActionCard(id, { state: "skipped", result: "Skipped by user.", ok: false });
-      resolve(apply);
-    },
-    [updateActionCard],
-  );
-
-  const runAction = useCallback(
-    async (action) => {
-      const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-      const readOnly = PageAgent.READ_ONLY.has(action.action);
-      const autoApply = !settings.safeMode || readOnly;
-      setActionCards((current) => [
-        ...current,
-        { id, action, state: autoApply ? "applying" : "pending", result: autoApply ? "Auto-applying…" : "", ok: null },
-      ]);
-
-      if (!autoApply) {
-        const applied = await new Promise((resolve) => actionResolversRef.current.set(id, resolve));
-        if (!applied) return { action: action.action, ok: false, message: "Skipped by user" };
-      }
-      if (!page.tabId) {
-        updateActionCard(id, { state: "done", result: "No page attached.", ok: false });
-        return { action: action.action, ok: false, message: "No page attached" };
-      }
-      if (action.action === "get_snapshot") {
-        await page.refreshPage();
-        updateActionCard(id, { state: "done", result: "Snapshot refreshed.", ok: true });
-        return { action: action.action, ok: true, message: "Snapshot refreshed" };
-      }
-      try {
-        const result = await PageAgent.executeAction(page.tabId, action);
-        updateActionCard(id, {
-          state: "done",
-          result: `${result.ok ? "✓" : "✗"} ${result.message}`,
-          ok: result.ok,
-        });
-        return { action: action.action, ...result };
-      } catch (error) {
-        updateActionCard(id, { state: "done", result: `✗ ${error.message}`, ok: false });
-        return { action: action.action, ok: false, message: String(error.message || error) };
-      }
-    },
-    [page, settings.safeMode, updateActionCard],
-  );
-
-  const handleCitation = useCallback(
-    async (index) => {
-      const text = chunks[index - 1];
-      if (!text || !page.tabId) return;
-      setStatus(`Scrolling to citation [${index}]…`);
-      try {
-        const result = await PageAgent.scrollToChunk(page.tabId, text);
-        setStatus(result.ok ? `Citation [${index}] shown on page.` : result.message);
-      } catch (error) {
-        setStatus(`Citation scroll failed: ${error.message}`);
-      }
-    },
-    [chunks, page.tabId],
-  );
-
-  const sendText = useCallback(
-    async (rawText) => {
-      const text = String(rawText || "").trim();
-      if ((!text && !attachments.length) || busy) return;
-      if (!active?.model) {
-        setNotice({
-          id: "notice-no-model",
-          role: "assistant",
-          content: "No model available. Open Settings, pick a provider, enter the API key if needed, and press Refresh.",
-          modelName: "Free AI",
-          error: true,
-        });
-        setSettingsOpen(true);
-        return;
-      }
-
-      if (attachments.some((file) => file.kind === "image") && !modelCapabilities(active.model, active.provider.protocol).vision) {
-        setStatus("This model can't read images — remove them or switch to a vision model.");
-        return;
-      }
-      let outgoing = null;
-      let suffix = "";
-      if (attachments.length) {
-        const built = userMessageWithAttachments(text, attachments, active.provider.protocol);
-        if (built.error) {
-          setStatus(built.error);
-          return;
-        }
-        outgoing = built.message;
-        suffix = built.suffix;
-      }
-      const snapshot = settings.includePage && page.attachPage ? await page.refreshPage() : page.snapshot;
-      const context = buildPageContext(snapshot, active.provider, page.picked?.selector || "");
-      setChunks(context.chunks);
-      if (!activeThreadId) th.setActiveThreadId(createThreadId());
-      const userMessage = { id: createThreadId(), role: "user", content: text + suffix };
-      const requestHistory = [...messages, userMessage];
-      th.setMessages(requestHistory);
-      setNotice(null);
-      setInput("");
-      setAttachments([]);
-      setBusy(true);
-      const abort = new AbortController();
-      abortRef.current = abort;
-
-      const agentIntent = isPageActionIntent(text);
-      const baseSystem =
-        active.provider.protocol === "nano"
-          ? agentIntent
-            ? SYSTEM_NANO
-            : SYSTEM_CHAT
-          : agentIntent
-            ? SYSTEM_AGENT
-            : SYSTEM_CHAT;
-      const customSystem = String(settings.systemPrompt || "").trim();
-      const thinkingHint = THINKING_HINTS[settings.thinkingLevel] || THINKING_HINTS.medium;
-      const system = [customSystem, baseSystem, thinkingHint].filter(Boolean).join("\n\n") + context.text;
-      let requestMessages = [{ role: "system", content: system }, ...requestHistory.slice(-12)];
-      if (outgoing) requestMessages[requestMessages.length - 1] = outgoing;
-      let finalText = "";
-      let previousSignature = "";
-
-      try {
-        for (let iteration = 0; iteration < 5; iteration += 1) {
-          const modelName = `${active.provider.name} · ${active.model}`;
-          streamBufferRef.current = "";
-          streamFlushRef.current = 0;
-          setStreamingMessage({ role: "assistant", content: "", modelName, streaming: true });
-          setStatus(modelName + (iteration ? ` · step ${iteration + 1}` : ""));
-          const full = await streamChat(
-            active.provider,
-            active.model,
-            requestMessages,
-            (chunk) => {
-              streamBufferRef.current += chunk;
-              const now = performance.now();
-              if (now - streamFlushRef.current < 100) return;
-              streamFlushRef.current = now;
-              const buffered = streamBufferRef.current;
-              setStreamingMessage((current) => (current ? { ...current, content: buffered } : current));
-            },
-            abort.signal,
-            { reasoningEffort: THINKING_EFFORT[settings.thinkingLevel] || "" },
-          );
-          finalText = full;
-          setStreamingMessage({ role: "assistant", content: full, modelName, streaming: true });
-          const actions = agentIntent ? PageAgent.parseAgentActions(full) : [];
-          if (!actions.length) break;
-          const signature = JSON.stringify(actions);
-          if (signature === previousSignature) break;
-          previousSignature = signature;
-
-          const results = [];
-          for (const action of actions.slice(0, 6)) results.push(await runAction(action));
-          const refreshedSnapshot = await page.refreshPage();
-          requestMessages = [
-            ...requestMessages,
-            { role: "assistant", content: full },
-            {
-              role: "user",
-              content:
-                `[Page action results]\n${results
-                  .map((result) => `- ${result.action}: ${result.ok ? "OK" : "FAIL"} — ${result.message}`)
-                  .join("\n")}` +
-                (refreshedSnapshot
-                  ? `\n\nUpdated page text (truncated):\n${refreshedSnapshot.text.slice(0, 3000)}`
-                  : "") +
-                "\nIf the task is complete, reply with a brief confirmation and NO action blocks. Do not repeat actions.",
-            },
-          ];
-          if (results.every((result) => !result.ok)) break;
-        }
-        if (finalText) {
-          const visibleText = PageAgent.stripAgentBlocks(finalText) || finalText;
-          th.setMessages((current) => [
-            ...current,
-            {
-              id: createThreadId(),
-              role: "assistant",
-              content: visibleText,
-              modelName: `${active.provider.name} · ${active.model}`,
-            },
-          ]);
-        }
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          setNotice({
-            id: "notice-error",
-            role: "assistant",
-            content: `Error: ${error.message}\n\nCheck endpoint, API key, and that the local server is running.`,
-            modelName: active.provider.name,
-            error: true,
-          });
-        }
-      } finally {
-        setStreamingMessage(null);
-        setBusy(false);
-        abortRef.current = null;
-        setStatus("");
-      }
-    },
-    [
-      active,
-      activeThreadId,
-      attachments,
-      busy,
-      messages,
-      page,
-      runAction,
-      settings.includePage,
-      settings.systemPrompt,
-      settings.thinkingLevel,
-    ],
-  );
-  sendTextRef.current = sendText;
-
-  useEffect(() => {
-    if (!loaded || pendingHandledRef.current) return;
-    pendingHandledRef.current = true;
-    takePendingPrompt()
-      .then((prompt) => {
-        if (prompt) sendTextRef.current?.(prompt, "chat");
-      })
-      .catch(() => {});
-  }, [loaded]);
-
-  useEffect(() => {
-    if (!loaded || !settings.autoTldr || !active || messages.length || busy || !page.snapshot) return;
-    if (lastTldrRef.current === page.snapshot.url) return;
-    lastTldrRef.current = page.snapshot.url;
-    sendTextRef.current?.("Give a 3-line TL;DR of this page.", "chat");
-  }, [active, busy, loaded, messages.length, page.snapshot, settings.autoTldr]);
 
   const fillPromptInput = useCallback(
     (promptText) => {
@@ -372,7 +122,7 @@ export default function App() {
     [page.snapshot],
   );
 
-  const displayedMessages = notice ? [...messages, notice] : messages;
+  const displayedMessages = chat.notice ? [...messages, chat.notice] : messages;
 
   return (
     <>
@@ -396,20 +146,20 @@ export default function App() {
       />
 
       <MessageList
-        actionCards={actionCards}
-        chunks={chunks}
+        actionCards={chat.actionCards}
+        chunks={chat.chunks}
         messages={displayedMessages}
-        onApplyAction={(id) => resolveAction(id, true)}
-        onCitation={handleCitation}
-        onSkipAction={(id) => resolveAction(id, false)}
-        onSuggestion={(suggestion) => sendText(suggestion.prompt)}
+        onApplyAction={(id) => chat.resolveAction(id, true)}
+        onCitation={chat.handleCitation}
+        onSkipAction={(id) => chat.resolveAction(id, false)}
+        onSuggestion={(suggestion) => chat.sendText(suggestion.prompt)}
         providerStatus={ep.providerSummary}
-        streamingMessage={streamingMessage}
+        streamingMessage={chat.streamingMessage}
       />
 
       <Composer
         active={active}
-        busy={busy}
+        busy={chat.busy}
         input={input}
         modelMenu={
           <ModelMenu
@@ -433,8 +183,8 @@ export default function App() {
           }
           setInput(value);
         }}
-        onStop={() => abortRef.current?.abort()}
-        onSubmit={() => sendText(input)}
+        onStop={() => chat.stopStream()}
+        onSubmit={() => chat.sendText(input)}
         onToggleMenu={(menu) => setOpenMenu((current) => (current === menu ? null : menu))}
         onToggleSafe={() => setSettings((current) => ({ ...current, safeMode: !current.safeMode }))}
         openMenu={openMenu}
