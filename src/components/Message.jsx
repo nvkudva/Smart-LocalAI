@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { stripAgentBlocks } from "../services/pageAgent.js";
 import * as Icons from "./Icons.jsx";
 import Markdown from "./Markdown.jsx";
@@ -31,7 +32,7 @@ export function ActionCard({ card, onApply, onSkip }) {
   );
 }
 
-export function Message({ message, chunks, onCitation }) {
+export const Message = memo(function Message({ message, chunks, onCitation }) {
   if (message.role === "user") {
     return (
       <div className="msg user">
@@ -61,4 +62,4 @@ export function Message({ message, chunks, onCitation }) {
       )}
     </div>
   );
-}
+});

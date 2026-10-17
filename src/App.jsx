@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Composer from "./components/Composer.jsx";
 import { Header, SharingBar } from "./components/Header.jsx";
 import MessageList from "./components/MessageList.jsx";
 import ModelMenu from "./components/ModelMenu.jsx";
 import PromptMenu from "./components/PromptMenu.jsx";
-import SettingsDrawer from "./components/SettingsDrawer.jsx";
+import { useEndpoint } from "./hooks/useEndpoint.jsx";
 import { usePageContext } from "./hooks/usePageContext.js";
+import { useThreads } from "./hooks/useThreads.js";
+
+const SettingsDrawer = lazy(() => import("./components/SettingsDrawer.jsx"));
 import {
   DEFAULT_SETTINGS,
   SYSTEM_AGENT,
@@ -15,32 +18,11 @@ import {
   THINKING_HINTS,
 } from "./lib/constants.js";
 import { isPageActionIntent } from "./lib/intent.js";
-import {
-  buildProvider,
-  createDefaultEndpoint,
-  createThreadId,
-  endpointModels,
-  isNanoEnabled,
-  resolveActive,
-  threadTitle,
-  upsertThread,
-} from "./lib/extensionState.js";
-import { buildPageContext, downloadTextFile } from "./lib/pageContext.js";
-import { historyValue, pushPrompt, stepHistoryIndex } from "./lib/promptHistory.js";
+import { createThreadId } from "./lib/extensionState.js";
+import { buildPageContext } from "./lib/pageContext.js";
 import { loadPersistedState, savePersistedState, takePendingPrompt } from "./lib/storage.js";
 import * as PageAgent from "./services/pageAgent.js";
-import {
-  NANO_MODEL,
-  PROVIDER_TYPES,
-  detectLocal,
-  listModels,
-  modelCapabilities,
-  nanoAvailability,
-  normalizeBase,
-  pickSmartModel,
-  streamChat,
-  userMessageWithAttachments,
-} from "./services/providers.js";
+import { modelCapabilities, streamChat, userMessageWithAttachments } from "./services/providers.js";
 
 const TEXT_FILE = /\.(txt|md|markdown|csv|json|js|jsx|ts|tsx|py|html|css|xml|yaml|yml|log|toml|ini|cfg|java|c|cpp|h|go|rs|rb|php|sh|sql)$/i;
 const TEXT_ACCEPT = ".txt,.md,.markdown,.csv,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.yaml,.yml,.log";
@@ -56,17 +38,8 @@ function readAsDataUrl(file) {
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
-  const [endpoint, setEndpoint] = useState(() => createDefaultEndpoint());
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [threads, setThreads] = useState([]);
-  const [activeThreadId, setActiveThreadId] = useState("");
-  const [messages, setMessages] = useState([]);
   const [customPrompts, setCustomPrompts] = useState([]);
-  const [nanoStatus, setNanoStatus] = useState("checking");
-  const [detection, setDetection] = useState({});
-  const [providerSummary, setProviderSummary] = useState("Detecting local models…");
-  const [endpointError, setEndpointError] = useState("");
-  const [endpointLoading, setEndpointLoading] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
@@ -78,39 +51,38 @@ export default function App() {
   const [notice, setNotice] = useState(null);
   const [actionCards, setActionCards] = useState([]);
   const [chunks, setChunks] = useState([]);
-  const [voiceActive, setVoiceActive] = useState(false);
   const [attachments, setAttachments] = useState([]);
-  const [promptHistory, setPromptHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const draftRef = useRef("");
   const attachRef = useRef(null);
 
   const abortRef = useRef(null);
   const actionResolversRef = useRef(new Map());
-  const endpointRef = useRef(endpoint);
-  const endpointTimerRef = useRef(null);
-  const recognitionRef = useRef(null);
   const lastTldrRef = useRef("");
   const pendingHandledRef = useRef(false);
   const sendTextRef = useRef(null);
-  endpointRef.current = endpoint;
+  const streamFlushRef = useRef(0);
+  const streamBufferRef = useRef("");
+
+  const closeMenu = useCallback(() => setOpenMenu(null), []);
+  const resetChatArtifacts = useCallback(() => {
+    setActionCards([]);
+    setStreamingMessage(null);
+    setNotice(null);
+    setChunks([]);
+    setOpenMenu(null);
+  }, []);
+
+  const ep = useEndpoint({ loaded, settings, onStatus: setStatus, closeMenu });
+  const th = useThreads({ onResetChat: resetChatArtifacts, onStatus: setStatus });
+  const { endpoint, active } = ep;
+  const { threads, activeThreadId, messages } = th;
 
   const page = usePageContext({ settings, onStatus: setStatus });
 
-  const nanoEnabled = isNanoEnabled(endpoint, nanoStatus);
-  const availableModels = useMemo(
-    () => (nanoEnabled ? [NANO_MODEL] : endpointModels(endpoint, detection)),
-    [detection, endpoint, nanoEnabled],
-  );
-  const activeProvider = useMemo(() => buildProvider(endpoint, nanoStatus), [endpoint, nanoStatus]);
-  const active = useMemo(() => {
-    const resolved = resolveActive(endpoint, nanoStatus, settings, detection);
-    return resolved ? { ...resolved, explicit: Boolean(endpoint.model) && !nanoEnabled } : null;
-  }, [detection, endpoint, nanoEnabled, nanoStatus, settings]);
   const caps = useMemo(
     () => (active ? modelCapabilities(active.model, active.provider.protocol) : { vision: false, pdf: false }),
     [active],
   );
+
 
   const removeAttachment = useCallback((id) => {
     setAttachments((current) => current.filter((file) => file.id !== id));
@@ -188,13 +160,12 @@ export default function App() {
     loadPersistedState()
       .then((state) => {
         if (cancelled) return;
-        setEndpoint(state.endpoint);
+        ep.setEndpoint(state.endpoint);
         setSettings(state.settings);
-        setThreads(state.threads);
-        setActiveThreadId(state.activeThreadId);
-        setMessages(state.messages);
+        th.setThreads(state.threads);
+        th.setActiveThreadId(state.activeThreadId);
+        th.setMessages(state.messages);
         setCustomPrompts(state.customPrompts);
-        setPromptHistory(state.promptHistory || []);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
@@ -205,8 +176,11 @@ export default function App() {
 
   useEffect(() => {
     if (!loaded) return;
-    savePersistedState({ endpoint, settings, threads, activeThreadId, messages, customPrompts, promptHistory }).catch(() => {});
-  }, [activeThreadId, customPrompts, endpoint, loaded, messages, promptHistory, settings, threads]);
+    const timer = window.setTimeout(() => {
+      savePersistedState({ endpoint, settings, threads, activeThreadId, messages, customPrompts }).catch(() => {});
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [activeThreadId, customPrompts, endpoint, loaded, messages, settings, threads]);
 
   useEffect(() => {
     const closeMenus = (event) => {
@@ -220,204 +194,6 @@ export default function App() {
     document.addEventListener("click", closeMenus);
     return () => document.removeEventListener("click", closeMenus);
   }, []);
-
-  const detectProviders = useCallback(async () => {
-    setProviderSummary("Detecting local models…");
-    const [nano, results] = await Promise.all([nanoAvailability(), detectLocal()]);
-    setNanoStatus(nano);
-    const nextDetection = {};
-    for (const result of results) nextDetection[result.preset.id] = result;
-    setDetection(nextDetection);
-    const healthy = results.filter((result) => result.ok);
-    setProviderSummary(
-      healthy.length
-        ? healthy.map((result, index) => (
-            <span key={result.preset.id}>
-              {index > 0 ? "  " : ""}
-              <b>● {result.preset.name}</b> {result.models.length} models · {result.latencyMs}ms
-            </span>
-          ))
-        : "No local model found. Start LM Studio / Ollama, or pick a cloud endpoint in Settings.",
-    );
-  }, []);
-
-  useEffect(() => {
-    if (loaded) detectProviders();
-  }, [detectProviders, loaded]);
-
-  const refreshModels = useCallback(async (nextEndpoint = endpointRef.current) => {
-    const provider = buildProvider(nextEndpoint, nanoStatus);
-    if (!provider.baseUrl) {
-      setEndpointError("URL required for a custom endpoint.");
-      return;
-    }
-    setEndpointLoading(true);
-    setEndpointError("");
-    try {
-      const models = await listModels(provider);
-      setEndpoint((current) => ({ ...current, models }));
-    } catch (error) {
-      setEndpointError(`✗ ${error.message}`);
-    } finally {
-      setEndpointLoading(false);
-    }
-  }, [nanoStatus]);
-
-  const scheduleModelRefresh = useCallback(() => {
-    window.clearTimeout(endpointTimerRef.current);
-    endpointTimerRef.current = window.setTimeout(() => refreshModels(endpointRef.current), 800);
-  }, [refreshModels]);
-
-  const updateEndpoint = useCallback((field, value) => {
-    setEndpoint((current) => ({ ...current, [field]: value }));
-  }, []);
-
-  const changeEndpointType = useCallback(
-    (type) => {
-      const preset = PROVIDER_TYPES[type] || PROVIDER_TYPES.custom;
-      setEndpoint((current) => {
-        const next = {
-          ...current,
-          type,
-          baseUrl: preset.baseUrl,
-          models: [],
-          model: current.remembered[type] || "",
-        };
-        endpointRef.current = next;
-        return next;
-      });
-      window.setTimeout(() => refreshModels(endpointRef.current), 0);
-    },
-    [refreshModels],
-  );
-
-  const changeEndpointField = useCallback(
-    (field, value) => {
-      updateEndpoint(field, value);
-      scheduleModelRefresh();
-    },
-    [scheduleModelRefresh, updateEndpoint],
-  );
-
-  const commitEndpointField = useCallback(
-    (field, value) => {
-      updateEndpoint(field, field === "baseUrl" ? normalizeBase(value) : value.trim());
-      scheduleModelRefresh();
-    },
-    [scheduleModelRefresh, updateEndpoint],
-  );
-
-  const rememberModel = useCallback((model) => {
-    setEndpoint((current) => ({
-      ...current,
-      model,
-      remembered: model ? { ...current.remembered, [current.type]: model } : current.remembered,
-    }));
-  }, []);
-
-  const selectAutoModel = useCallback(() => {
-    setEndpoint((current) => {
-      const remembered = { ...current.remembered };
-      delete remembered[current.type];
-      return { ...current, model: "", remembered };
-    });
-    setOpenMenu(null);
-  }, []);
-
-  const selectModel = useCallback(
-    (model) => {
-      if (!nanoEnabled) rememberModel(model);
-      setOpenMenu(null);
-    },
-    [nanoEnabled, rememberModel],
-  );
-
-  const downloadNano = useCallback(async () => {
-    setNanoStatus("downloading");
-    try {
-      const languageModel = window.LanguageModel || window.ai?.languageModel;
-      const session = await languageModel.create({ expectedOutputLanguages: ["en"] });
-      if (typeof session?.destroy === "function") session.destroy();
-    } catch (error) {
-      setStatus(`Model download failed: ${error.message}`);
-    }
-    setNanoStatus(await nanoAvailability());
-  }, []);
-
-  const endpointStatus = endpointLoading
-    ? "Fetching models…"
-    : endpointError ||
-      (availableModels.length
-        ? `${availableModels.length} models · Smart: ${pickSmartModel(availableModels)}`
-        : PROVIDER_TYPES[endpoint.type]?.local && !detection[endpoint.type]?.ok
-          ? `Offline — start ${PROVIDER_TYPES[endpoint.type].name}, then press Refresh.`
-          : "No models listed — press Refresh.");
-
-  const startNewThread = useCallback(() => {
-    setThreads((current) => upsertThread(current, activeThreadId, messages));
-    setActiveThreadId("");
-    setMessages([]);
-    setActionCards([]);
-    setStreamingMessage(null);
-    setNotice(null);
-    setChunks([]);
-    setHistoryIndex(-1);
-    setOpenMenu(null);
-  }, [activeThreadId, messages]);
-
-  const openThread = useCallback(
-    (threadId) => {
-      const nextThreads = upsertThread(threads, activeThreadId, messages);
-      const thread = nextThreads.find((item) => item.id === threadId);
-      if (!thread) return;
-      setThreads(nextThreads);
-      setActiveThreadId(thread.id);
-      setMessages(thread.messages || []);
-      setActionCards([]);
-      setStreamingMessage(null);
-      setNotice(null);
-      setChunks([]);
-      setHistoryIndex(-1);
-      setOpenMenu(null);
-    },
-    [activeThreadId, messages, threads],
-  );
-
-  const deleteThread = useCallback(
-    (threadId) => {
-      setThreads((current) => current.filter((thread) => thread.id !== threadId));
-      if (threadId === activeThreadId) {
-        setActiveThreadId("");
-        setMessages([]);
-        setActionCards([]);
-        setChunks([]);
-      }
-    },
-    [activeThreadId],
-  );
-
-  const exportThread = useCallback(
-    (format) => {
-      if (!messages.length) {
-        setStatus("Nothing to export.");
-        return;
-      }
-      const title = threadTitle(messages);
-      const stamp = new Date().toISOString().slice(0, 10);
-      if (format === "csv") {
-        const rows = [["role", "content"], ...messages.map((message) => [message.role, message.content])];
-        const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
-        downloadTextFile(`freeai-${stamp}.csv`, csv, "text/csv");
-      } else {
-        const markdown = `# ${title}\n\n${messages
-          .map((message) => `${message.role === "user" ? "## You" : "## Free AI"}\n\n${message.content}`)
-          .join("\n\n")}\n`;
-        downloadTextFile(`freeai-${stamp}.md`, markdown, "text/markdown");
-      }
-      setStatus(`Exported ${messages.length} messages.`);
-    },
-    [messages],
-  );
 
   const updateActionCard = useCallback((id, patch) => {
     setActionCards((current) => current.map((card) => (card.id === id ? { ...card, ...patch } : card)));
@@ -522,15 +298,13 @@ export default function App() {
       const snapshot = settings.includePage && page.attachPage ? await page.refreshPage() : page.snapshot;
       const context = buildPageContext(snapshot, active.provider, page.picked?.selector || "");
       setChunks(context.chunks);
-      if (!activeThreadId) setActiveThreadId(createThreadId());
+      if (!activeThreadId) th.setActiveThreadId(createThreadId());
       const userMessage = { id: createThreadId(), role: "user", content: text + suffix };
       const requestHistory = [...messages, userMessage];
-      setMessages(requestHistory);
+      th.setMessages(requestHistory);
       setNotice(null);
       setInput("");
       setAttachments([]);
-      setPromptHistory((current) => pushPrompt(current, text));
-      setHistoryIndex(-1);
       setBusy(true);
       const abort = new AbortController();
       abortRef.current = abort;
@@ -555,16 +329,22 @@ export default function App() {
       try {
         for (let iteration = 0; iteration < 5; iteration += 1) {
           const modelName = `${active.provider.name} · ${active.model}`;
+          streamBufferRef.current = "";
+          streamFlushRef.current = 0;
           setStreamingMessage({ role: "assistant", content: "", modelName, streaming: true });
           setStatus(modelName + (iteration ? ` · step ${iteration + 1}` : ""));
           const full = await streamChat(
             active.provider,
             active.model,
             requestMessages,
-            (chunk) =>
-              setStreamingMessage((current) =>
-                current ? { ...current, content: current.content + chunk } : current,
-              ),
+            (chunk) => {
+              streamBufferRef.current += chunk;
+              const now = performance.now();
+              if (now - streamFlushRef.current < 100) return;
+              streamFlushRef.current = now;
+              const buffered = streamBufferRef.current;
+              setStreamingMessage((current) => (current ? { ...current, content: buffered } : current));
+            },
             abort.signal,
             { reasoningEffort: THINKING_EFFORT[settings.thinkingLevel] || "" },
           );
@@ -598,7 +378,7 @@ export default function App() {
         }
         if (finalText) {
           const visibleText = PageAgent.stripAgentBlocks(finalText) || finalText;
-          setMessages((current) => [
+          th.setMessages((current) => [
             ...current,
             {
               id: createThreadId(),
@@ -661,55 +441,10 @@ export default function App() {
     (promptText) => {
       const selection = page.snapshot?.selection || "";
       setInput(String(promptText).split("{selection}").join(selection).split("{page}").join(selection));
-      setHistoryIndex(-1);
       setOpenMenu(null);
     },
     [page.snapshot],
   );
-
-  const navHistory = useCallback(
-    (direction) => {
-      const next = stepHistoryIndex(promptHistory, historyIndex, direction);
-      if (next === historyIndex) return;
-      if (historyIndex === -1) draftRef.current = input;
-      setHistoryIndex(next);
-      setInput(historyValue(promptHistory, next, draftRef.current));
-    },
-    [historyIndex, input, promptHistory],
-  );
-
-  const toggleVoice = useCallback(() => {
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) {
-      setStatus("Voice input not supported in this browser.");
-      return;
-    }
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      return;
-    }
-    const recognition = new Recognition();
-    recognitionRef.current = recognition;
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map((result) => result[0].transcript)
-        .join(" ");
-      setInput((current) => `${current ? `${current} ` : ""}${transcript}`);
-    };
-    recognition.onend = () => {
-      recognitionRef.current = null;
-      setVoiceActive(false);
-    };
-    recognition.onerror = (event) => {
-      setStatus(`Voice error: ${event.error}`);
-      recognitionRef.current = null;
-      setVoiceActive(false);
-    };
-    recognition.start();
-    setVoiceActive(true);
-  }, []);
 
   const displayedMessages = notice ? [...messages, notice] : messages;
 
@@ -721,11 +456,11 @@ export default function App() {
           activeThreadId,
           query: historyQuery,
           onQueryChange: setHistoryQuery,
-          onOpen: openThread,
-          onDelete: deleteThread,
-          onExport: exportThread,
+          onOpen: th.openThread,
+          onDelete: th.deleteThread,
+          onExport: th.exportThread,
         }}
-        onNewChat={startNewThread}
+        onNewChat={th.startNewThread}
         onOpenSettings={() => setSettingsOpen(true)}
         onToggleMenu={(menu) => setOpenMenu((current) => (current === menu ? null : menu))}
         onToggleTheme={() =>
@@ -742,7 +477,7 @@ export default function App() {
         onCitation={handleCitation}
         onSkipAction={(id) => resolveAction(id, false)}
         onSuggestion={(suggestion) => sendText(suggestion.prompt)}
-        providerStatus={providerSummary}
+        providerStatus={ep.providerSummary}
         streamingMessage={streamingMessage}
       />
 
@@ -754,13 +489,13 @@ export default function App() {
           <ModelMenu
             active={active}
             expanded={modelExpanded}
-            isNano={nanoEnabled}
-            models={availableModels}
-            onSelectAuto={selectAutoModel}
-            onSelectModel={selectModel}
+            isNano={ep.nanoEnabled}
+            models={ep.availableModels}
+            onSelectAuto={ep.selectAutoModel}
+            onSelectModel={ep.selectModel}
             onSelectThinking={(level) => setSettings((current) => ({ ...current, thinkingLevel: level }))}
             onToggleExpanded={() => setModelExpanded((current) => !current)}
-            provider={activeProvider}
+            provider={ep.activeProvider}
             thinkingValue={settings.thinkingLevel || "medium"}
           />
         }
@@ -770,15 +505,12 @@ export default function App() {
             setOpenMenu("prompts");
             return;
           }
-          setHistoryIndex(-1);
           setInput(value);
         }}
-        onHistoryNav={navHistory}
         onStop={() => abortRef.current?.abort()}
         onSubmit={() => sendText(input)}
         onToggleMenu={(menu) => setOpenMenu((current) => (current === menu ? null : menu))}
         onToggleSafe={() => setSettings((current) => ({ ...current, safeMode: !current.safeMode }))}
-        onToggleVoice={toggleVoice}
         openMenu={openMenu}
         promptMenu={
           <PromptMenu
@@ -816,39 +548,33 @@ export default function App() {
           />
         }
         status={status}
-        voiceActive={voiceActive}
       />
 
       {settingsOpen && (
+        <Suspense fallback={null}>
         <SettingsDrawer
           customPrompts={customPrompts}
           endpoint={endpoint}
-          endpointLoading={endpointLoading}
-          endpointModels={availableModels}
-          endpointStatus={endpointStatus}
-          nanoStatus={nanoStatus}
+          endpointLoading={ep.endpointLoading}
+          endpointModels={ep.availableModels}
+          endpointStatus={ep.endpointStatus}
+          nanoStatus={ep.nanoStatus}
           onAddPrompt={(prompt) =>
             setCustomPrompts((current) => (current.includes(prompt) ? current : [...current, prompt]))
           }
-          onClearHistory={() => {
-            setThreads([]);
-            setActiveThreadId("");
-            setMessages([]);
-            setActionCards([]);
-            setChunks([]);
-          }}
+          onClearHistory={th.clearAllThreads}
           onClose={() => setSettingsOpen(false)}
           onDeletePrompt={(index) => setCustomPrompts((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-          onDownloadNano={downloadNano}
-          onEndpointBlur={commitEndpointField}
-          onEndpointChange={changeEndpointField}
-          onEndpointTypeChange={changeEndpointType}
-          onModelChange={rememberModel}
-          onNanoChange={(checked) => updateEndpoint("useNano", checked)}
-          onRefreshModels={() => refreshModels()}
+          onDownloadNano={ep.downloadNano}
+          onEndpointBlur={ep.commitEndpointField}
+          onEndpointChange={ep.changeEndpointField}
+          onEndpointTypeChange={ep.changeEndpointType}
+          onNanoChange={(checked) => ep.updateEndpoint("useNano", checked)}
+          onRefreshModels={() => ep.refreshModels()}
           onSettingsChange={(field, value) => setSettings((current) => ({ ...current, [field]: value }))}
           settings={settings}
         />
+        </Suspense>
       )}
     </>
   );

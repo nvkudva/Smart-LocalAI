@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as PageAgent from "../services/pageAgent.js";
 
 export function usePageContext({ settings, onStatus }) {
   const [tabId, setTabId] = useState(null);
+  const tabIdRef = useRef(null);
   const [pageTitle, setPageTitle] = useState("No page attached");
   const [pageUrl, setPageUrl] = useState("");
   const [pageReady, setPageReady] = useState(false);
@@ -13,6 +14,7 @@ export function usePageContext({ settings, onStatus }) {
   const refreshPage = useCallback(async () => {
     try {
       const tab = await PageAgent.activeTab();
+      tabIdRef.current = tab?.id ?? null;
       setTabId(tab?.id ?? null);
       if (!tab || PageAgent.isRestricted(tab.url)) {
         setPageTitle(tab ? "Restricted page — answers only" : "No page attached");
@@ -46,7 +48,7 @@ export function usePageContext({ settings, onStatus }) {
     if (typeof chrome === "undefined" || !chrome.tabs) return undefined;
     const activated = () => refreshPage();
     const updated = (updatedTabId, info) => {
-      if (updatedTabId && info.status === "complete") refreshPage();
+      if (info.status === "complete" && updatedTabId === tabIdRef.current) refreshPage();
     };
     chrome.tabs.onActivated.addListener(activated);
     chrome.tabs.onUpdated.addListener(updated);

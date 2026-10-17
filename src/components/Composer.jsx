@@ -12,7 +12,6 @@ export default function Composer({
   settings,
   status,
   busy,
-  voiceActive,
   active,
   openMenu,
   sharingBar,
@@ -22,14 +21,12 @@ export default function Composer({
   attachAccepts,
   attachRef,
   onInputChange,
-  onHistoryNav,
   onFilesChosen,
   onRemoveAttachment,
   onSubmit,
   onStop,
   onToggleMenu,
   onToggleSafe,
-  onToggleVoice,
 }) {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -72,17 +69,6 @@ export default function Composer({
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               onSubmit();
-            } else if (
-              (event.key === "ArrowUp" || event.key === "ArrowDown") &&
-              !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey
-            ) {
-              const box = event.target;
-              const before = box.value.slice(0, box.selectionStart);
-              const after = box.value.slice(box.selectionEnd);
-              if (event.key === "ArrowUp" && before.includes("\n")) return;
-              if (event.key === "ArrowDown" && after.includes("\n")) return;
-              event.preventDefault();
-              onHistoryNav(event.key === "ArrowUp" ? 1 : -1);
             }
           }}
           placeholder="Type / to use prompts, or ask anything…"
@@ -155,16 +141,6 @@ export default function Composer({
             >
               <span className="model-opener-label">{shortModelLabel(active)}</span>
               <Icons.ChevronDown />
-            </button>
-
-            <button
-              aria-label={voiceActive ? "Stop voice input" : "Voice input"}
-              className={`icon-btn composer-icon ${voiceActive ? "is-on" : ""}`}
-              onClick={onToggleVoice}
-              title="Voice input"
-              type="button"
-            >
-              <Icons.Mic />
             </button>
 
             {busy ? (

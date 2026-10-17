@@ -8,7 +8,6 @@ const STORAGE_KEYS = [
   "freeai.threads",
   "freeai.activeThread",
   "freeai.customPrompts",
-  "freeai.promptHistory",
 ];
 
 function hasChromeStorage() {

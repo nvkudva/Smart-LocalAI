@@ -131,13 +131,10 @@ export function normalizeStoredState(data) {
     activeThreadId,
     messages,
     customPrompts: Array.isArray(data["freeai.customPrompts"]) ? data["freeai.customPrompts"] : [],
-    promptHistory: Array.isArray(data["freeai.promptHistory"])
-      ? data["freeai.promptHistory"].filter((item) => typeof item === "string").slice(-100)
-      : [],
   };
 }
 
-export function stateForStorage({ endpoint, settings, threads, activeThreadId, messages, customPrompts, promptHistory }) {
+export function stateForStorage({ endpoint, settings, threads, activeThreadId, messages, customPrompts }) {
   return {
     "freeai.endpoint": endpoint,
     "freeai.settings": settings,
@@ -145,6 +142,5 @@ export function stateForStorage({ endpoint, settings, threads, activeThreadId, m
     "freeai.threads": upsertThread(threads, activeThreadId, messages).slice(0, 30),
     "freeai.activeThread": activeThreadId,
     "freeai.customPrompts": customPrompts.slice(0, 50),
-    "freeai.promptHistory": (promptHistory || []).slice(-100),
   };
 }

@@ -25,7 +25,6 @@ export default function SettingsDrawer({
   endpoint,
   settings,
   nanoStatus,
-  endpointModels,
   endpointStatus,
   endpointLoading,
   customPrompts,
@@ -35,7 +34,6 @@ export default function SettingsDrawer({
   onEndpointChange,
   onEndpointTypeChange,
   onEndpointBlur,
-  onModelChange,
   onRefreshModels,
   onSettingsChange,
   onAddPrompt,
@@ -44,8 +42,6 @@ export default function SettingsDrawer({
 }) {
   const [newPrompt, setNewPrompt] = useState("");
   const nanoEnabled = endpoint.useNano && nanoStatus === "available";
-  const smartModel = endpointModels.length ? endpointModels[0] : "";
-  const selectedModel = endpoint.model || endpoint.remembered[endpoint.type] || "";
 
   return (
     <aside className="settings">
@@ -57,7 +53,7 @@ export default function SettingsDrawer({
       </div>
 
       <section>
-        <h3>Built-in model</h3>
+        <h3>Model</h3>
         <div className="provider-row nano-row">
           <Checkbox
             checked={endpoint.useNano}
@@ -74,11 +70,10 @@ export default function SettingsDrawer({
             )}
           </div>
         </div>
-      </section>
-
-      <section>
-        <h3>Endpoint</h3>
-        <div className={nanoEnabled ? "api-card disabled" : "api-card"} inert={nanoEnabled}>
+        {nanoEnabled ? (
+          <p className="model-results">Endpoint paused while the built-in model is on. Untick it to edit the endpoint.</p>
+        ) : (
+        <div className="api-card">
           <div className="provider-row">
             <Field htmlFor="epType" label="API provider">
               <select id="epType" onChange={(event) => onEndpointTypeChange(event.target.value)} value={endpoint.type}>
@@ -108,16 +103,6 @@ export default function SettingsDrawer({
                 value={endpoint.apiKey}
               />
             </Field>
-            <Field htmlFor="epModel" label="Model">
-              <select id="epModel" onChange={(event) => onModelChange(event.target.value)} value={selectedModel}>
-                <option value="">Smart pick{smartModel ? `: ${smartModel}` : ""}</option>
-                {endpointModels.map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
-              </select>
-            </Field>
             <div className="row">
               <button className="btn primary" disabled={endpointLoading} onClick={onRefreshModels} type="button">
                 Refresh models
@@ -126,8 +111,11 @@ export default function SettingsDrawer({
             <div className="model-results">{endpointStatus}</div>
           </div>
         </div>
+        )}
       </section>
 
+      <details className="advanced">
+        <summary>Advanced</summary>
       <section>
         <h3>System prompt</h3>
         <label className="field" htmlFor="systemPrompt">
@@ -208,6 +196,7 @@ export default function SettingsDrawer({
           Clear chat history
         </button>
       </section>
+      </details>
     </aside>
   );
 }
