@@ -107,14 +107,6 @@ export function Stop({ size = 14 }) {
     </Base>
   );
 }
-export function Mic({ size }) {
-  return (
-    <Base size={size}>
-      <rect height="11" rx="2.5" width="6" x="9" y="2.5" />
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6" />
-    </Base>
-  );
-}
 export function Shield({ size }) {
   return (
     <Base size={size}>

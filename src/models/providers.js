@@ -15,10 +15,6 @@ const PRESETS = [
     custom: { name: "Custom", protocol: "openai", baseUrl: "", auth: "bearer" }
   };
 
-  function uid() {
-    return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-
   function normalizeBase(url) {
     return String(url || "").trim().replace(/\/+$/, "");
   }
@@ -235,19 +231,12 @@ const PRESETS = [
     return results;
   }
 
-  async function testProvider(provider) {
-    const started = performance.now();
-    const models = await listModels(provider);
-    return { models, latencyMs: Math.round(performance.now() - started), smartModel: pickSmartModel(models) };
-  }
-
 export {
   PRESETS,
   PROVIDER_TYPES,
   NANO_MODEL,
   nanoAPI,
   nanoAvailability,
-  uid,
   normalizeBase,
   scoreModel,
   pickSmartModel,
@@ -257,7 +246,6 @@ export {
   probeLocal,
   modelCapabilities,
   userMessageWithAttachments,
-  testProvider,
   authHeaders,
 };
 
