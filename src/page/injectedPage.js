@@ -232,7 +232,8 @@ export function scrollToChunkInPage(text) {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let node = walker.nextNode();
     while (node) {
-      if (node.textContent.includes(short)) {
+      const tag = node.parentElement ? node.parentElement.tagName : "";
+      if (tag !== "SCRIPT" && tag !== "STYLE" && node.textContent.includes(short)) {
         const el = node.parentElement || document.body;
         el.scrollIntoView({ block: "center", behavior: "smooth" });
         return { ok: true, message: "Scrolled to citation" };
