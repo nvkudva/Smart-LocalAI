@@ -60,7 +60,7 @@ export function useThreads({ onResetChat, onStatus }) {
         downloadTextFile(`smart-local-ai-${stamp}.csv`, csv, "text/csv");
       } else {
         const markdown = `# ${title}\n\n${messages
-          .map((message) => `${message.role === "user" ? "## You" : "## Smart Local AI"}\n\n${message.content}`)
+          .map((message) => `${message.role === "user" ? "## You" : "## Smart-LocalAI"}\n\n${message.content}`)
           .join("\n\n")}\n`;
         downloadTextFile(`smart-local-ai-${stamp}.md`, markdown, "text/markdown");
       }

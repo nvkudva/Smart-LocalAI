@@ -48,7 +48,7 @@ export const Message = memo(function Message({ message, chunks, onCitation }) {
         <span className="sparkle">
           <Icons.Sparkle size={14} />
         </span>
-        <span>{message.modelName || "Smart Local AI"}</span>
+        <span>{message.modelName || "Smart-LocalAI"}</span>
       </div>
       <div className="body">
         <Markdown chunks={chunks} onCitation={onCitation} text={visibleText} />
