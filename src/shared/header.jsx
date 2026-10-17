@@ -1,4 +1,4 @@
-import HistoryMenu from "../chat/history-menu.jsx";
+import HistoryMenu from "../chat/historyMenu.jsx";
 import * as Icons from "./icons.jsx";
 
 export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpenSettings, historyMenuProps }) {

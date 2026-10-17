@@ -1,19 +1,19 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Composer from "../chat/composer.jsx";
 import { Header, SharingBar } from "../shared/header.jsx";
-import MessageList from "../chat/message-list.jsx";
-import ModelMenu from "../models/model-menu.jsx";
-import PromptMenu from "../chat/prompt-menu.jsx";
-import { useEndpoint } from "../models/use-endpoint.jsx";
-import { usePageContext } from "../page/use-page-context.js";
-import { useThreads } from "../threads/use-threads.js";
-import { TEXT_ACCEPT, useAttachments } from "../chat/use-attachments.js";
+import MessageList from "../chat/messageList.jsx";
+import ModelMenu from "../models/modelMenu.jsx";
+import PromptMenu from "../chat/promptMenu.jsx";
+import { useEndpoint } from "../models/useEndpoint.jsx";
+import { usePageContext } from "../page/use-pageContext.js";
+import { useThreads } from "../threads/useThreads.js";
+import { TEXT_ACCEPT, useAttachments } from "../chat/useAttachments.js";
 
-const SettingsDrawer = lazy(() => import("../settings/settings-drawer.jsx"));
+const SettingsDrawer = lazy(() => import("../settings/settingsDrawer.jsx"));
 import { DEFAULT_SETTINGS } from "../shared/constants.js";
 import { loadPersistedState, savePersistedState } from "../shared/storage.js";
 import { modelCapabilities } from "../models/providers.js";
-import { useChatLoop } from "./use-chat-loop.js";
+import { useChatLoop } from "./useChatLoop.js";
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);

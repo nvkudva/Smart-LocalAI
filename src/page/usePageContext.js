@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as PageAgent from "./page-agent.js";
+import * as PageAgent from "./pageAgent.js";
 
 export function usePageContext({ settings, onStatus }) {
   const [tabId, setTabId] = useState(null);

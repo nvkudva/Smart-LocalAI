@@ -5,7 +5,7 @@ import {
   scrollToChunkInPage,
   snapshotInPage,
   undoInPage,
-} from "./injected-page.js";
+} from "./injectedPage.js";
 
 function isRestrictedPage(url) {
     return !url || /^(chrome|edge|about|chrome-extension|devtools|view-source):/.test(url) || url.includes("chromewebstore.google.com");

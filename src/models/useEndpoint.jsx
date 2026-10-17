@@ -6,7 +6,7 @@ import {
   listEndpointModels,
   isNanoEnabled,
   resolveActive,
-} from "../shared/extension-state.js";
+} from "../shared/extensionState.js";
 import { detectLocal, listModels, nanoAvailability, normalizeBase, pickSmartModel } from "./providers.js";
 
 export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {

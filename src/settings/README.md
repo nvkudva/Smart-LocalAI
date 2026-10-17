@@ -1,2 +1,2 @@
 # Settings
-Endpoint card and advanced settings sections. Entry point: `settings-drawer.jsx`.
+Endpoint card and advanced settings sections. Entry point: `settingsDrawer.jsx`.

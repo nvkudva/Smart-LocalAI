@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { modelCapabilities } from "../models/providers.js";
-import { createThreadId } from "../shared/extension-state.js";
+import { createThreadId } from "../shared/extensionState.js";
 
 const TEXT_FILE = /\.(txt|md|markdown|csv|json|js|jsx|ts|tsx|py|html|css|xml|yaml|yml|log|toml|ini|cfg|java|c|cpp|h|go|rs|rb|php|sh|sql)$/i;
 export const TEXT_ACCEPT = ".txt,.md,.markdown,.csv,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.yaml,.yml,.log";

@@ -1,5 +1,5 @@
 import { NANO_LABELS } from "../shared/constants.js";
-import AdvancedSection from "./advanced-section.jsx";
+import AdvancedSection from "./advancedSection.jsx";
 import { PROVIDER_TYPES } from "../models/providers.js";
 import * as Icons from "../shared/icons.jsx";
 

@@ -7,12 +7,12 @@ import {
   THINKING_HINTS,
 } from "../shared/constants.js";
 import { isPageActionIntent } from "../page/intent.js";
-import { createThreadId } from "../shared/extension-state.js";
-import { buildPageContext } from "../page/page-context.js";
+import { createThreadId } from "../shared/extensionState.js";
+import { buildPageContext } from "../page/pageContext.js";
 import { takePendingPrompt } from "../shared/storage.js";
-import * as PageAgent from "../page/page-agent.js";
+import * as PageAgent from "../page/pageAgent.js";
 import { modelCapabilities, userMessageWithAttachments } from "../models/providers.js";
-import { streamChat } from "../models/stream-transports.js";
+import { streamChat } from "../models/streamTransports.js";
 
 /**
  * Own the sidebar send/stream/agent-action loop and its transient UI state.

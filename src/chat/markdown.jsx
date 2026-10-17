@@ -1,4 +1,4 @@
-import { renderInline } from "./render-inline.jsx";
+import { renderInline } from "./renderInline.jsx";
 
 export default function Markdown({ text, chunks, onCitation }) {
   const lines = String(text || "").split("\n");

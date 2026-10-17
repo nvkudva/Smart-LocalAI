@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { stripAgentBlocks } from "../page/page-agent.js";
+import { stripAgentBlocks } from "../page/pageAgent.js";
 import * as Icons from "../shared/icons.jsx";
 import Markdown from "./markdown.jsx";
 
