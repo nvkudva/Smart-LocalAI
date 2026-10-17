@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS } from "./constants.js";
-import { NANO_MODEL, PROVIDER_TYPES, pickSmartModel } from "../services/providers.js";
+import { NANO_MODEL, PROVIDER_TYPES, pickSmartModel } from "../models/providers.js";
 
 export function createDefaultEndpoint(type = "lmstudio") {
   const preset = PROVIDER_TYPES[type] || PROVIDER_TYPES.custom;
@@ -14,7 +14,7 @@ export function createDefaultEndpoint(type = "lmstudio") {
   };
 }
 
-export function endpointModels(endpoint, detection) {
+export function listEndpointModels(endpoint, detection) {
   if (endpoint.models.length) return endpoint.models;
   return detection[endpoint.type]?.models || [];
 }
@@ -53,7 +53,7 @@ export function effectiveModel(provider, endpoint, settings, detection) {
   if (provider.model) return provider.model;
   const remembered = endpoint.remembered[provider.id];
   if (remembered) return remembered;
-  const models = endpointModels(endpoint, detection);
+  const models = listEndpointModels(endpoint, detection);
   return settings.smartModel ? pickSmartModel(models) : models[0] || "";
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { SUGGESTIONS } from "../lib/constants.js";
-import * as Icons from "./Icons.jsx";
-import { ActionCard, Message } from "./Message.jsx";
+import { SUGGESTIONS } from "../shared/constants.js";
+import * as Icons from "../shared/icons.jsx";
+import { ActionCard, Message } from "./message.jsx";
 
 export function EmptyState({ providerStatus, onSuggestion }) {
   return (

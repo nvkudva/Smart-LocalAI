@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as PageAgent from "../services/pageAgent.js";
+import * as PageAgent from "./page-agent.js";
 
 export function usePageContext({ settings, onStatus }) {
   const [tabId, setTabId] = useState(null);
@@ -16,7 +16,7 @@ export function usePageContext({ settings, onStatus }) {
       const tab = await PageAgent.activeTab();
       tabIdRef.current = tab?.id ?? null;
       setTabId(tab?.id ?? null);
-      if (!tab || PageAgent.isRestricted(tab.url)) {
+      if (!tab || PageAgent.isRestrictedPage(tab.url)) {
         setPageTitle(tab ? "Restricted page — answers only" : "No page attached");
         setPageUrl(tab?.url || "");
         setPageReady(false);

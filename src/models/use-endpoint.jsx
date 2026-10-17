@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { NANO_MODEL, PROVIDER_TYPES } from "../services/providers.js";
+import { NANO_MODEL, PROVIDER_TYPES } from "./providers.js";
 import {
   buildProvider,
   createDefaultEndpoint,
-  endpointModels,
+  listEndpointModels,
   isNanoEnabled,
   resolveActive,
-} from "../lib/extensionState.js";
-import { detectLocal, listModels, nanoAvailability, normalizeBase, pickSmartModel } from "../services/providers.js";
+} from "../shared/extension-state.js";
+import { detectLocal, listModels, nanoAvailability, normalizeBase, pickSmartModel } from "./providers.js";
 
 export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
   const [endpoint, setEndpoint] = useState(() => createDefaultEndpoint());
@@ -22,7 +22,7 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
 
   const nanoEnabled = isNanoEnabled(endpoint, nanoStatus);
   const availableModels = useMemo(
-    () => (nanoEnabled ? [NANO_MODEL] : endpointModels(endpoint, detection)),
+    () => (nanoEnabled ? [NANO_MODEL] : listEndpointModels(endpoint, detection)),
     [detection, endpoint, nanoEnabled],
   );
   const activeProvider = useMemo(() => buildProvider(endpoint, nanoStatus), [endpoint, nanoStatus]);

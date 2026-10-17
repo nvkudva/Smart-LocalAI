@@ -1,7 +1,7 @@
 // Page snapshot, element picker, action executor. Runs from the sidebar;
 // functions marked INJECTED are serialized into the page by chrome.scripting.
 
-function isRestricted(url) {
+function isRestrictedPage(url) {
     return !url || /^(chrome|edge|about|chrome-extension|devtools|view-source):/.test(url) || url.includes("chromewebstore.google.com");
   }
 
@@ -295,7 +295,7 @@ function isRestricted(url) {
   }
 
 export {
-  isRestricted,
+  isRestrictedPage,
   activeTab,
   getSnapshot,
   executeAction,

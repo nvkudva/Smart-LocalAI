@@ -1,6 +1,6 @@
-import { THINKING_LEVELS } from "../lib/constants.js";
-import { pickSmartModel, rankModels } from "../services/providers.js";
-import * as Icons from "./Icons.jsx";
+import { THINKING_LEVELS } from "../shared/constants.js";
+import { pickSmartModel, rankModels } from "./providers.js";
+import * as Icons from "../shared/icons.jsx";
 
 const PREVIEW_COUNT = 4;
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { NANO_LABELS } from "../lib/constants.js";
-import { PROVIDER_TYPES } from "../services/providers.js";
-import * as Icons from "./Icons.jsx";
+import { NANO_LABELS } from "../shared/constants.js";
+import { PROVIDER_TYPES } from "../models/providers.js";
+import * as Icons from "../shared/icons.jsx";
 
 function Field({ label, htmlFor, children }) {
   return (

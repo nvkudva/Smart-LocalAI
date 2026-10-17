@@ -1,14 +1,14 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Composer from "./components/Composer.jsx";
-import { Header, SharingBar } from "./components/Header.jsx";
-import MessageList from "./components/MessageList.jsx";
-import ModelMenu from "./components/ModelMenu.jsx";
-import PromptMenu from "./components/PromptMenu.jsx";
-import { useEndpoint } from "./hooks/useEndpoint.jsx";
-import { usePageContext } from "./hooks/usePageContext.js";
-import { useThreads } from "./hooks/useThreads.js";
+import Composer from "../chat/composer.jsx";
+import { Header, SharingBar } from "../shared/header.jsx";
+import MessageList from "../chat/message-list.jsx";
+import ModelMenu from "../models/model-menu.jsx";
+import PromptMenu from "../chat/prompt-menu.jsx";
+import { useEndpoint } from "../models/use-endpoint.jsx";
+import { usePageContext } from "../page/use-page-context.js";
+import { useThreads } from "../threads/use-threads.js";
 
-const SettingsDrawer = lazy(() => import("./components/SettingsDrawer.jsx"));
+const SettingsDrawer = lazy(() => import("../settings/settings-drawer.jsx"));
 import {
   DEFAULT_SETTINGS,
   SYSTEM_AGENT,
@@ -16,13 +16,13 @@ import {
   SYSTEM_NANO,
   THINKING_EFFORT,
   THINKING_HINTS,
-} from "./lib/constants.js";
-import { isPageActionIntent } from "./lib/intent.js";
-import { createThreadId } from "./lib/extensionState.js";
-import { buildPageContext } from "./lib/pageContext.js";
-import { loadPersistedState, savePersistedState, takePendingPrompt } from "./lib/storage.js";
-import * as PageAgent from "./services/pageAgent.js";
-import { modelCapabilities, streamChat, userMessageWithAttachments } from "./services/providers.js";
+} from "../shared/constants.js";
+import { isPageActionIntent } from "../page/intent.js";
+import { createThreadId } from "../shared/extension-state.js";
+import { buildPageContext } from "../page/page-context.js";
+import { loadPersistedState, savePersistedState, takePendingPrompt } from "../shared/storage.js";
+import * as PageAgent from "../page/page-agent.js";
+import { modelCapabilities, streamChat, userMessageWithAttachments } from "../models/providers.js";
 
 const TEXT_FILE = /\.(txt|md|markdown|csv|json|js|jsx|ts|tsx|py|html|css|xml|yaml|yml|log|toml|ini|cfg|java|c|cpp|h|go|rs|rb|php|sh|sql)$/i;
 const TEXT_ACCEPT = ".txt,.md,.markdown,.csv,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.yaml,.yml,.log";
@@ -437,7 +437,7 @@ export default function App() {
     sendTextRef.current?.("Give a 3-line TL;DR of this page.", "chat");
   }, [active, busy, loaded, messages.length, page.snapshot, settings.autoTldr]);
 
-  const fillPrompt = useCallback(
+  const fillPromptInput = useCallback(
     (promptText) => {
       const selection = page.snapshot?.selection || "";
       setInput(String(promptText).split("{selection}").join(selection).split("{page}").join(selection));
@@ -515,7 +515,7 @@ export default function App() {
         promptMenu={
           <PromptMenu
             customPrompts={customPrompts}
-            onSelect={fillPrompt}
+            onSelect={fillPromptInput}
             canImage={caps.vision}
             canDoc={Boolean(active?.model)}
             docHint={caps.pdf ? "Text files and PDFs" : "Text files (PDFs need Claude / Gemini)"}
@@ -556,7 +556,6 @@ export default function App() {
           customPrompts={customPrompts}
           endpoint={endpoint}
           endpointLoading={ep.endpointLoading}
-          endpointModels={ep.availableModels}
           endpointStatus={ep.endpointStatus}
           nanoStatus={ep.nanoStatus}
           onAddPrompt={(prompt) =>

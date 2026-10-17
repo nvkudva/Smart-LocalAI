@@ -1,4 +1,4 @@
-import { normalizeStoredState, stateForStorage } from "./extensionState.js";
+import { normalizeStoredState, stateForStorage } from "./extension-state.js";
 
 const STORAGE_KEYS = [
   "freeai.endpoint",

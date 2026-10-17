@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import { threadTitle, upsertThread } from "../lib/extensionState.js";
-import { downloadTextFile } from "../lib/pageContext.js";
+import { threadTitle, upsertThread } from "../shared/extension-state.js";
+import { downloadTextFile } from "../page/page-context.js";
 
 export function useThreads({ onResetChat, onStatus }) {
   const [threads, setThreads] = useState([]);

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import * as Icons from "./Icons.jsx";
+import * as Icons from "../shared/icons.jsx";
 
 function shortModelLabel(active) {
   if (!active) return "No model";

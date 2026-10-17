@@ -1,5 +1,5 @@
-import { BUILTIN_PROMPTS } from "../lib/constants.js";
-import * as Icons from "./Icons.jsx";
+import { BUILTIN_PROMPTS } from "../shared/constants.js";
+import * as Icons from "../shared/icons.jsx";
 
 export default function PromptMenu({ customPrompts, canImage, canDoc, docHint, onSelect, onAttachImage, onAttachDoc }) {
   const prompts = [

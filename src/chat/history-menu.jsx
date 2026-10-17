@@ -1,4 +1,4 @@
-import * as Icons from "./Icons.jsx";
+import * as Icons from "../shared/icons.jsx";
 
 export default function HistoryMenu({ threads, activeThreadId, query, onQueryChange, onOpen, onDelete, onExport }) {
   const normalizedQuery = query.trim().toLowerCase();
