@@ -5,7 +5,7 @@ import MessageList from "../chat/messageList.jsx";
 import ModelMenu from "../models/modelMenu.jsx";
 import PromptMenu from "../chat/promptMenu.jsx";
 import { useEndpoint } from "../models/useEndpoint.jsx";
-import { usePageContext } from "../page/use-pageContext.js";
+import { usePageContext } from "../page/usePageContext.js";
 import { useThreads } from "../threads/useThreads.js";
 import { TEXT_ACCEPT, useAttachments } from "../chat/useAttachments.js";
 
