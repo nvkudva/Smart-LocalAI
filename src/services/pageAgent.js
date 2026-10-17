@@ -1,9 +1,7 @@
-// Page snapshot, element picker, action executor. Runs from sidepanel;
+// Page snapshot, element picker, action executor. Runs from the sidebar;
 // functions marked INJECTED are serialized into the page by chrome.scripting.
-(function () {
-  "use strict";
 
-  function isRestricted(url) {
+function isRestricted(url) {
     return !url || /^(chrome|edge|about|chrome-extension|devtools|view-source):/.test(url) || url.includes("chromewebstore.google.com");
   }
 
@@ -17,7 +15,7 @@
     function selectorFor(el) {
       if (!el || el === document.body) return "body";
       if (el.id) return "#" + CSS.escape(el.id);
-      const testId = el.getAttribute && el.getAttribute("data-testid");
+      const testId = el.getAttribute?.("data-testid");
       if (testId) return '[data-testid="' + testId + '"]';
       const parts = [];
       let node = el;
@@ -62,7 +60,7 @@
     window.__freeAiUndo = window.__freeAiUndo || [];
     function find(selector) {
       if (!selector) return document.body;
-      try { return document.querySelector(selector); } catch (e) { return null; }
+      try { return document.querySelector(selector); } catch { return null; }
     }
     function describe(el) {
       return el ? (el.tagName.toLowerCase() + (el.id ? "#" + el.id : "")) : "nothing";
@@ -137,7 +135,7 @@
       }
       return { ok: false, message: "Unknown action: " + kind };
     } catch (e) {
-      return { ok: false, message: String(e && e.message || e) };
+      return { ok: false, message: String(e?.message || e) };
     }
   }
 
@@ -173,7 +171,7 @@
       }
       return { ok: true, message: "Undid " + last.kind + ". " + stack.length + " left." };
     } catch (e) {
-      return { ok: false, message: String(e && e.message || e) };
+      return { ok: false, message: String(e?.message || e) };
     }
   }
 
@@ -193,7 +191,7 @@
       document.body.appendChild(box);
       function selectorFor(el) {
         if (el.id) return "#" + CSS.escape(el.id);
-        const testId = el.getAttribute && el.getAttribute("data-testid");
+        const testId = el.getAttribute?.("data-testid");
         if (testId) return '[data-testid="' + testId + '"]';
         const parts = [];
         let node = el;
@@ -254,13 +252,12 @@
   function parseAgentActions(text) {
     const actions = [];
     const fence = /```(?:agent|json|tool)?\s*\n([\s\S]*?)```/g;
-    let match;
-    while ((match = fence.exec(text)) !== null) {
+    for (let match = fence.exec(text); match !== null; match = fence.exec(text)) {
       try {
         const parsed = JSON.parse(match[1].trim());
         const list = Array.isArray(parsed) ? parsed : [parsed];
-        for (const item of list) if (item && item.action) actions.push(item);
-      } catch (e) { /* not an action block */ }
+        for (const item of list) if (item?.action) actions.push(item);
+      } catch { /* not an action block */ }
     }
     return actions;
   }
@@ -271,8 +268,8 @@
         const inner = block.replace(/```[a-z]*\s*\n?/, "").replace(/```$/, "");
         const parsed = JSON.parse(inner.trim());
         const list = Array.isArray(parsed) ? parsed : [parsed];
-        return list.every((i) => i && i.action) ? "" : block;
-      } catch (e) { return block; }
+        return list.every((i) => i?.action) ? "" : block;
+      } catch { return block; }
     }).trim();
   }
 
@@ -284,11 +281,11 @@
       const found = window.find(needle, false, false, true);
       if (!found) return { ok: false, message: "Text not found on page" };
       const node = window.getSelection().anchorNode;
-      const el = node && node.parentElement ? node.parentElement : document.body;
+      const el = node?.parentElement ? node.parentElement : document.body;
       el.scrollIntoView({ block: "center", behavior: "smooth" });
       return { ok: true, message: "Scrolled to citation" };
     } catch (e) {
-      return { ok: false, message: String(e && e.message || e) };
+      return { ok: false, message: String(e?.message || e) };
     }
   }
 
@@ -297,9 +294,16 @@
     return results[0].result || { ok: false, message: "No result" };
   }
 
-  window.PageAgent = {
-    isRestricted, activeTab, getSnapshot, executeAction, undo, pickElement,
-    scrollToChunk, parseAgentActions, stripAgentBlocks, READ_ONLY
-  };
-})();
+export {
+  isRestricted,
+  activeTab,
+  getSnapshot,
+  executeAction,
+  undo,
+  pickElement,
+  scrollToChunk,
+  parseAgentActions,
+  stripAgentBlocks,
+  READ_ONLY,
+};
 

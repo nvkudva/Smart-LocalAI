@@ -37,7 +37,7 @@ chrome.runtime.onStartup.addListener(setupMenus);
 let pendingPrompt = null;
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (!tab || !tab.windowId) return;
+  if (!tab?.windowId) return;
   const build = SELECTION_ACTIONS[info.menuItemId];
   if (build) {
     pendingPrompt = build(info.selectionText || "");
