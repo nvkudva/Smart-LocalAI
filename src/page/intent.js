@@ -9,6 +9,7 @@ const ACTION_PATTERNS = [
   /\b(dark mode|light mode)\b/i,
   /\bapply (with |using )?css\b/i,
   /\b(remove|hide|delete)\b[^.?!]{0,40}\bthis page\b/i,
+  new RegExp(`\\b(type|fill)\\b[^.?!]{0,30}\\binto\\b[^.?!]{0,30}\\b${TARGET}\\b`, "i"),
   new RegExp(`\\b${EDIT_VERB}\\s+(the|this|that|all|every)\\s+${TARGET}\\b`, "i"),
   new RegExp(`^\\s*(please\\s+)?(can you\\s+|could you\\s+)?${EDIT_VERB}\\b(\\s+\\S+){0,2}\\s+${TARGET}\\b`, "i"),
   new RegExp(`\\b(click|scroll|fill|tap|press)\\b[^.?!]{0,30}\\b${TARGET}\\b`, "i"),

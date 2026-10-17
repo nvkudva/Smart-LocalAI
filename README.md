@@ -11,13 +11,19 @@ Chrome Sidebar extension — chat & page agent like Claude for Chrome / Google A
 3. Click **Load unpacked**, select the generated `dist` folder.
 4. Click the toolbar icon (or `Ctrl/Cmd+Shift+Y`) on any page.
 
-For development, run `bun run dev`, then rebuild before reloading the unpacked extension.
+For development, run `bun run dev`, then rebuild before reloading the unpacked extension. Run `bun test` for the regression suite and `bun run lint` for the linter.
+
+## Screenshots
+
+| Light | Dark |
+|---|---|
+| ![Sidebar empty state, light theme](docs/screenshots/empty-light.png) | ![Sidebar empty state, dark theme](docs/screenshots/empty-dark.png) |
 
 ## Models
 
 - **Built-in (if available):** Settings → Built-in model uses Chrome's on-device Gemini Nano. Free, no key. Enabling it disables the endpoint card.
-- **Endpoint card:** pick a provider (LM Studio, Ollama, Anthropic, OpenAI, DeepSeek, Custom). URL prefills and stays editable. Enter the API key, press **Refresh models**, pick a model or leave Smart pick. Your model choice is remembered per provider.
-- Model pill (top-left) switches model any time. Keys live only in `chrome.storage.local`.
+- **Endpoint card:** pick a provider (LM Studio, Ollama, Anthropic, OpenAI, DeepSeek, Gemini, Custom). URL prefills and stays editable. Enter the API key, press **Refresh models**, pick a model or leave Smart pick. Your model choice is remembered per provider.
+- Model pill switches model any time, with per-model reasoning effort. Keys live only in `chrome.storage.local`.
 
 ## Page agent
 
@@ -28,6 +34,15 @@ For development, run `bun run dev`, then rebuild before reloading the unpacked e
 - Suggestion chips: Summarize, Dark mode, Readability, Extract data, Remove distractions.
 - Right-click: *Ask Smart LocalAI* on selected text, *Summarize this page* on any page.
 - Blocked on `chrome://` and Web Store pages (Chrome forbids scripting there); chat still works.
+
+## Cool extras
+
+- **Page citations** — facts from the page render as `[1]` buttons; click one to scroll the page to that passage.
+- **Attachments** — images (vision models), PDFs (Claude/Gemini), and code/text files ride along with your message.
+- **Prompt library** — type `/` for built-ins plus your own saved prompts with `{selection}` and `{page}` placeholders.
+- **Threads** — searchable history, per-chat export to Markdown/CSV, one-click clear (with confirm).
+- **Auto TL;DR** — optional 3-line summary the moment a new page opens.
+- **Permissions** — the extension asks for `<all_urls>` only so local endpoints (LM Studio/Ollama on localhost) and page injection work everywhere; keys never leave your machine except to the endpoint you chose.
 
 ## Project layout
 

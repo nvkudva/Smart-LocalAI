@@ -91,6 +91,7 @@ export function threadTitle(messages) {
   const first = (messages || []).find((message) => message.role === "user");
   if (!first) return "New chat";
   const text = String(first.content ?? "");
+  if (!text) return "New chat";
   return text.slice(0, 40) + (text.length > 40 ? "…" : "");
 }
 

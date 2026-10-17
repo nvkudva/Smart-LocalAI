@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "biome lint src public/background.js vite.config.js"
+    "lint": "biome lint src public/background.js vite.config.js",
+    "test": "bun test"
   },
   "dependencies": {
     "react": "^19.3.1",
