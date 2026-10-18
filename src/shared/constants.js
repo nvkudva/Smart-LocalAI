@@ -35,24 +35,27 @@ export const BUILTIN_PROMPTS = [
 ];
 
 export const SUGGESTIONS = [
-  { label: "Summarize this page", prompt: "Summarize this page: key points, then a one-line TL;DR." },
+  { icon: "notes", label: "Summarize this page", prompt: "Summarize this page: key points, then a one-line TL;DR." },
   {
+    icon: "moon",
     label: "Dark mode this page",
     mode: "agent",
     prompt: "Make this page easier to read: apply a clean dark mode with CSS. Keep layout intact.",
   },
   {
+    icon: "type",
     label: "Improve readability",
     mode: "agent",
     prompt: "Improve readability of this page: larger comfortable font, wider line height, max-width on main text. Apply with CSS.",
   },
-  { label: "Extract data as table", prompt: "Extract the main data from this page as a clean markdown table." },
+  { icon: "table", label: "Extract data as table", prompt: "Extract the main data from this page as a clean markdown table." },
   {
+    icon: "hide",
     label: "Remove distractions",
     mode: "agent",
     prompt: "Remove distractions on this page: hide popups, sticky banners, and sidebars not needed for reading.",
   },
-  { label: "What's on this page?", prompt: "What can I do on this page? List the main actions and content briefly." },
+  { icon: "search", label: "What's on this page?", prompt: "What can I do on this page? List the main actions and content briefly." },
 ];
 
 export const RESPONSE_FORMAT =

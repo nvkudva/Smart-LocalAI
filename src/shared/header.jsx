@@ -4,6 +4,14 @@ import * as Icons from "./icons.jsx";
 export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpenSettings, historyMenuProps }) {
   return (
     <header className="topbar">
+      <div className="brand">
+        <span className="brand-mark">
+          <Icons.Sparkle size={13} />
+        </span>
+        <span className="brand-name">
+          Smart <b>LocalAI</b>
+        </span>
+      </div>
       <span className="topbar-spacer" />
       <div className="top-actions">
         <button
@@ -52,7 +60,7 @@ export function SharingBar({ page, onToggleAttach, onPick, onUndo, onClearPicked
           title="Pick element on page"
           type="button"
         >
-          <Icons.Inspect size={16} />
+          <Icons.Target size={16} />
         </button>
         <button aria-label="Undo page edit" className="icon-btn icon-btn-sm" onClick={onUndo} title="Undo page edit" type="button">
           <Icons.Undo size={16} />

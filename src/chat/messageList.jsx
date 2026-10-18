@@ -3,29 +3,50 @@ import { SUGGESTIONS } from "../shared/constants.js";
 import * as Icons from "../shared/icons.jsx";
 import { ActionCard, Message } from "./message.jsx";
 
+const SUGGEST_ICON = {
+  hide: Icons.EyeOff,
+  moon: Icons.Theme,
+  notes: Icons.Notes,
+  search: Icons.Search,
+  table: Icons.Table,
+  type: Icons.TypeScale,
+};
+
 export function EmptyState({ providerStatus, onSuggestion }) {
   return (
     <section className="empty">
-      <div className="sparkle-big">
-        <Icons.Sparkle size={28} />
+      <div className="hero-card">
+        <div className="hero-head">
+          <span className="hero-mark">
+            <Icons.Sparkle size={15} />
+          </span>
+          <span className="hero-tag">Local-first · runs on your machine</span>
+        </div>
+        <h1 className="greeting">Hello, there</h1>
+        <p className="sub">
+          Chat, summarize, or tell me to restyle and edit this page. Local models first — LM Studio and Ollama are detected
+          automatically.
+        </p>
+        <div className="provider-status">{providerStatus}</div>
       </div>
-      <h1 className="greeting">Hello, there</h1>
-      <p className="sub">
-        Chat, summarize, or tell me to restyle and edit this page. Local models first — LM Studio and Ollama are detected
-        automatically.
-      </p>
-      <div className="provider-status">{providerStatus}</div>
+
       <div className="chips">
-        {SUGGESTIONS.map((suggestion) => (
-          <button
-            className="suggest"
-            key={suggestion.label}
-            onClick={() => onSuggestion(suggestion)}
-            type="button"
-          >
-            {suggestion.label}
-          </button>
-        ))}
+        {SUGGESTIONS.map((suggestion) => {
+          const Icon = SUGGEST_ICON[suggestion.icon] || Icons.Sparkle;
+          return (
+            <button
+              className="suggest"
+              key={suggestion.label}
+              onClick={() => onSuggestion(suggestion)}
+              type="button"
+            >
+              <span className="suggest-icon">
+                <Icon size={15} />
+              </span>
+              <span className="suggest-label">{suggestion.label}</span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

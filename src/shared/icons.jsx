@@ -141,11 +141,54 @@ export function Doc({ size }) {
     </Base>
   );
 }
-export function Inspect({ size }) {
+export function Target({ size }) {
   return (
     <Base size={size}>
-      <rect height="11" rx="1.5" strokeDasharray="3 2" width="12" x="9" y="7" />
-      <path d="M2.5 2.5 10 15l-2.4-.7-1.4 2.7-1.7-1L5.7 13 2.5 12z" />
+      <circle cx="12" cy="12" r="3.4" />
+      <circle cx="12" cy="12" r="8" strokeDasharray="3 3" />
+      <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
+    </Base>
+  );
+}
+export function Notes({ size }) {
+  return (
+    <Base filled size={size}>
+      <rect height="2.3" rx="1.15" width="18" x="3" y="4.6" />
+      <rect height="2.3" rx="1.15" width="18" x="3" y="9.7" />
+      <rect height="2.3" rx="1.15" width="11" x="3" y="14.8" />
+    </Base>
+  );
+}
+export function TypeScale({ size }) {
+  return (
+    <Base size={size}>
+      <path d="M3 19.5 7.2 7l4.2 12.5M4.6 15.3h5.2" />
+      <path d="M17.6 19.5V9.6M15.3 12.1l2.3-2.5 2.3 2.5" />
+    </Base>
+  );
+}
+export function Table({ size }) {
+  return (
+    <Base size={size}>
+      <rect height="15" rx="2.5" width="18" x="3" y="4.5" />
+      <path d="M3 9.5h18M9.6 9.5v10M15 9.5v10" />
+    </Base>
+  );
+}
+export function EyeOff({ size }) {
+  return (
+    <Base size={size}>
+      <path d="M3.5 3.5l17 17" />
+      <path d="M10.4 6.2A9.6 9.6 0 0 1 12 6.1c5 0 8.4 5.9 8.4 5.9a15.6 15.6 0 0 1-3.2 3.6M6.5 7.9A15.4 15.4 0 0 0 3.6 12s3.4 5.9 8.4 5.9c1.2 0 2.3-.3 3.3-.8" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </Base>
+  );
+}
+export function Search({ size }) {
+  return (
+    <Base size={size}>
+      <circle cx="10.8" cy="10.8" r="6.5" />
+      <path d="m15.6 15.6 4.6 4.6" />
     </Base>
   );
 }

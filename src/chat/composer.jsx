@@ -159,7 +159,6 @@ export default function Composer({
         {openMenu === "model" && <div className="menu-anchor menu-anchor-model">{modelMenu}</div>}
         {openMenu === "prompts" && <div className="menu-anchor menu-anchor-left">{promptMenu}</div>}
       </form>
-      <p className="fineprint">AI can make mistakes. Page edits are undoable. Keys stay in local storage.</p>
     </footer>
   );
 }
