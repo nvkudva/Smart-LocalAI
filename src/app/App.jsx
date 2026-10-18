@@ -152,6 +152,7 @@ export default function App() {
         messages={displayedMessages}
         onApplyAction={(id) => chat.resolveAction(id, true)}
         onCitation={chat.handleCitation}
+        onFork={(index) => th.forkThreadAt(index)}
         onSkipAction={(id) => chat.resolveAction(id, false)}
         onSuggestion={(suggestion) => chat.sendText(suggestion.prompt, suggestion.mode)}
         providerStatus={ep.providerSummary}

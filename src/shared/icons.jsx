@@ -165,6 +165,24 @@ export function Globe({ size }) {
     </Base>
   );
 }
+export function Copy({ size = 14 }) {
+  return (
+    <Base size={size}>
+      <rect height="12" rx="2" width="12" x="9" y="9" />
+      <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+    </Base>
+  );
+}
+export function Branch({ size = 14 }) {
+  return (
+    <Base size={size}>
+      <circle cx="6" cy="6" r="2.5" />
+      <circle cx="6" cy="18" r="2.5" />
+      <circle cx="18" cy="12" r="2.5" />
+      <path d="M6 8.5v7M8 6h3a4 4 0 0 1 4 4v.5" />
+    </Base>
+  );
+}
 export function Trash({ size = 15 }) {
   return (
     <Base size={size}>

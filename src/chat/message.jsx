@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { stripAgentBlocks } from "../page/pageAgent.js";
+import { formatTime } from "../shared/extensionState.js";
 import * as Icons from "../shared/icons.jsx";
 import Markdown from "./markdown.jsx";
 
@@ -35,10 +36,11 @@ export function ActionCard({ card, onApply, onSkip }) {
 
 function copyText(event, text) {
   const button = event.currentTarget;
+  const original = button.innerHTML;
   const done = (label) => {
     button.textContent = label;
     window.setTimeout(() => {
-      button.textContent = "Copy";
+      button.innerHTML = original;
     }, 1200);
   };
   navigator.clipboard
@@ -48,11 +50,35 @@ function copyText(event, text) {
   if (!navigator.clipboard) done("Copy failed");
 }
 
-export const Message = memo(function Message({ message, chunks, onCitation }) {
+function Meta({ message, index, onFork, children }) {
+  const stamp = formatTime(message.createdAt);
+  return (
+    <div className="msg-actions">
+      {stamp && (
+        <span className="msg-time" title={new Date(message.createdAt).toLocaleString()}>
+          {stamp}
+        </span>
+      )}
+      {children}
+      <button
+        aria-label="Start new thread from here"
+        className="mini-btn mini-icon"
+        onClick={() => onFork?.(index)}
+        title="Start new thread from here"
+        type="button"
+      >
+        <Icons.Branch size={13} />
+      </button>
+    </div>
+  );
+}
+
+export const Message = memo(function Message({ message, chunks, index, onCitation, onFork }) {
   if (message.role === "user") {
     return (
       <div className="msg user">
         <div className="bubble">{String(message.content ?? "")}</div>
+        <Meta index={index} message={message} onFork={onFork} />
       </div>
     );
   }
@@ -71,11 +97,18 @@ export const Message = memo(function Message({ message, chunks, onCitation }) {
         <Markdown chunks={chunks} onCitation={onCitation} text={visibleText} />
       </div>
       {!message.streaming && (
-        <div className="msg-actions">
-          <button className="mini-btn" onClick={(event) => copyText(event, message.content)} type="button">
-            Copy
+        <Meta index={index} message={message} onFork={onFork}>
+          {message.tps ? <span className="msg-tps" title="Tokens per second">~{message.tps} tok/s</span> : null}
+          <button
+            aria-label="Copy message"
+            className="mini-btn mini-icon"
+            onClick={(event) => copyText(event, message.content)}
+            title="Copy message"
+            type="button"
+          >
+            <Icons.Copy size={13} />
           </button>
-        </div>
+        </Meta>
       )}
     </div>
   );

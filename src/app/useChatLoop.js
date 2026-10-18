@@ -7,7 +7,7 @@ import {
   THINKING_HINTS,
 } from "../shared/constants.js";
 import { isPageActionIntent } from "../page/intent.js";
-import { createThreadId } from "../shared/extensionState.js";
+import { createThreadId, tokensPerSecond } from "../shared/extensionState.js";
 import { buildPageContext } from "../page/pageContext.js";
 import { takePendingPrompt } from "../shared/storage.js";
 import * as PageAgent from "../page/pageAgent.js";
@@ -156,7 +156,7 @@ export function useChatLoop({
       const context = buildPageContext(snapshot, active.provider, page.picked?.selector || "");
       setChunks(context.chunks);
       if (!activeThreadId) threadsApi.setActiveThreadId(createThreadId());
-      const userMessage = { id: createThreadId(), role: "user", content: text + suffix };
+      const userMessage = { id: createThreadId(), role: "user", content: text + suffix, createdAt: Date.now() };
       const requestHistory = [...messages, userMessage];
       threadsApi.setMessages(requestHistory);
       setNotice(null);
@@ -182,6 +182,7 @@ export function useChatLoop({
       if (outgoing) requestMessages[requestMessages.length - 1] = outgoing;
       let finalText = "";
       let previousSignature = "";
+      const startedAt = performance.now();
 
       try {
         for (let iteration = 0; iteration < 5; iteration += 1) {
@@ -247,6 +248,8 @@ export function useChatLoop({
               content: visibleText,
               modelName: `${active.provider.name} · ${active.model}`,
               chunks: context.chunks,
+              createdAt: Date.now(),
+              tps: tokensPerSecond(visibleText.length, performance.now() - startedAt),
             },
           ]);
         }

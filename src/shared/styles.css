@@ -226,7 +226,16 @@ button { font-family: inherit; cursor: pointer; }
 .code-copy-btn:active, .mini-btn:active { transform: scale(.95); }
 .ai-label { display: flex; gap: 7px; align-items: center; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
 .msg.error .body { color: var(--danger); }
-.msg-actions { display: flex; gap: 4px; margin-top: 6px; }
+.msg-actions {
+  display: flex; gap: 2px; align-items: center; margin-top: 4px; min-height: 22px;
+  opacity: 0; transition: opacity 150ms ease-out;
+}
+.msg:hover .msg-actions, .msg:focus-within .msg-actions { opacity: 1; }
+@media (hover: none) { .msg-actions { opacity: 1; } }
+.msg.user .msg-actions { justify-content: flex-end; }
+.msg-time, .msg-tps { color: var(--muted); font-size: 10.5px; padding: 0 4px; white-space: nowrap; }
+.mini-btn.mini-icon { padding: 4px; display: inline-grid; place-items: center; border-radius: 6px; }
+.mini-btn.mini-icon svg { display: block; }
 .mini-btn { border: 0; background: transparent; color: var(--muted); font-size: 11px; padding: 4px 8px; border-radius: 999px; }
 .mini-btn:hover { background: var(--surface); color: var(--text); }
 .typing { color: var(--muted); animation: pulse 1.2s ease-in-out infinite; }

@@ -38,6 +38,7 @@ export default function MessageList({
   chunks,
   providerStatus,
   onCitation,
+  onFork,
   onSuggestion,
   onApplyAction,
   onSkipAction,
@@ -56,8 +57,8 @@ export default function MessageList({
     <main className="messages" ref={mainRef}>
       {showEmpty && <EmptyState onSuggestion={onSuggestion} providerStatus={providerStatus} />}
       <div>
-        {messages.map((message) => (
-          <Message chunks={message.chunks ?? chunks} key={message.id || `${message.role}-${String(message.content ?? "").slice(0, 48)}`} message={message} onCitation={onCitation} />
+        {messages.map((message, index) => (
+          <Message chunks={message.chunks ?? chunks} index={index} key={message.id || `${message.role}-${String(message.content ?? "").slice(0, 48)}`} message={message} onCitation={onCitation} onFork={onFork} />
         ))}
         {streamingMessage && <Message chunks={chunks} message={streamingMessage} onCitation={onCitation} />}
         {actionCards.map((card) => (

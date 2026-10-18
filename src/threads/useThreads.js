@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { threadTitle, upsertThread } from "../shared/extensionState.js";
+import { createThreadId, forkMessages, threadTitle, upsertThread } from "../shared/extensionState.js";
 import { downloadTextFile } from "../page/pageContext.js";
 
 export function useThreads({ onResetChat, onStatus }) {
@@ -38,6 +38,19 @@ export function useThreads({ onResetChat, onStatus }) {
       }
     },
     [activeThreadId, onResetChat],
+  );
+
+  const forkThreadAt = useCallback(
+    (index) => {
+      const branched = forkMessages(messages, index);
+      if (!branched.length) return;
+      setThreads((current) => upsertThread(current, activeThreadId, messages));
+      setActiveThreadId(createThreadId());
+      setMessages(branched);
+      onResetChat();
+      onStatus("Branched into a new thread from here.");
+    },
+    [activeThreadId, messages, onResetChat, onStatus],
   );
 
   const clearAllThreads = useCallback(() => {
@@ -83,5 +96,6 @@ export function useThreads({ onResetChat, onStatus }) {
     deleteThread,
     clearAllThreads,
     exportThread,
+    forkThreadAt,
   };
 }
