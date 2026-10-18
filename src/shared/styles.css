@@ -344,4 +344,7 @@ body[data-theme="dark"] .send-btn { color: #131314; }
   text-transform: uppercase; color: var(--muted); margin: 14px 0 8px;
 }
 .settings .row { gap: 6px; }
+.settings .model-row { align-items: flex-end; flex-wrap: nowrap; }
+.settings .model-row .field { flex: 1; min-width: 0; }
+.settings .model-row .btn { flex: none; }
 .settings .check { font-size: 12.5px; margin: 0; gap: 6px; }

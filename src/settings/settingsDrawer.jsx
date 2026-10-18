@@ -85,26 +85,6 @@ export default function SettingsDrawer({
           <p className="model-results">Endpoint paused while the built-in model is on. Untick it to edit the endpoint.</p>
         ) : (
         <>
-        <Field htmlFor="epModel" label="Model">
-          <select
-            id="epModel"
-            onChange={(event) => {
-              const value = event.target.value;
-              if (value) onSelectModel(value);
-              else onSelectAuto();
-            }}
-            value={endpoint.model || ""}
-          >
-            <option value="">
-              Auto{availableModels.length ? `: ${pickSmartModel(availableModels)}` : ""}
-            </option>
-            {availableModels.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </Field>
         <div className="api-card">
           <div className="provider-row">
             <Field htmlFor="epType" label="API provider">
@@ -135,7 +115,27 @@ export default function SettingsDrawer({
                 value={endpoint.apiKey}
               />
             </Field>
-            <div className="row">
+            <div className="row model-row">
+              <Field htmlFor="epModel" label="Model">
+                <select
+                  id="epModel"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value) onSelectModel(value);
+                    else onSelectAuto();
+                  }}
+                  value={endpoint.model || ""}
+                >
+                  <option value="">
+                    Auto{availableModels.length ? `: ${pickSmartModel(availableModels)}` : ""}
+                  </option>
+                  {availableModels.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
               <button className="btn primary" disabled={endpointLoading} onClick={onRefreshModels} type="button">
                 Refresh models
               </button>
