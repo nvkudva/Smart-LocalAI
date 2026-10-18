@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { NANO_LABELS } from "../shared/constants.js";
 import AdvancedSection from "./advancedSection.jsx";
-import { PROVIDER_TYPES } from "../models/providers.js";
+import { PROVIDER_TYPES, pickSmartModel } from "../models/providers.js";
 import * as Icons from "../shared/icons.jsx";
 
 function Field({ label, htmlFor, children }) {
@@ -28,6 +28,7 @@ export default function SettingsDrawer({
   nanoStatus,
   endpointStatus,
   endpointLoading,
+  availableModels,
   customPrompts,
   onClose,
   onNanoChange,
@@ -36,6 +37,8 @@ export default function SettingsDrawer({
   onEndpointTypeChange,
   onEndpointBlur,
   onRefreshModels,
+  onSelectAuto,
+  onSelectModel,
   onSettingsChange,
   onAddPrompt,
   onDeletePrompt,
@@ -81,6 +84,27 @@ export default function SettingsDrawer({
         {nanoEnabled ? (
           <p className="model-results">Endpoint paused while the built-in model is on. Untick it to edit the endpoint.</p>
         ) : (
+        <>
+        <Field htmlFor="epModel" label="Model">
+          <select
+            id="epModel"
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value) onSelectModel(value);
+              else onSelectAuto();
+            }}
+            value={endpoint.model || ""}
+          >
+            <option value="">
+              Auto{availableModels.length ? `: ${pickSmartModel(availableModels)}` : ""}
+            </option>
+            {availableModels.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </Field>
         <div className="api-card">
           <div className="provider-row">
             <Field htmlFor="epType" label="API provider">
@@ -119,6 +143,7 @@ export default function SettingsDrawer({
             <div className="model-results">{endpointStatus}</div>
           </div>
         </div>
+        </>
         )}
       </section>
 

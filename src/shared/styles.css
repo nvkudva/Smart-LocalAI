@@ -325,9 +325,9 @@ body[data-theme="dark"] .send-btn { color: #131314; }
 .model-results { font-size: 11.5px; color: var(--muted); margin-top: 0; word-break: break-word; }
 
 .settings {
-  position: fixed; inset: 0 0 0 auto; width: min(380px, 100vw); z-index: 50;
-  background: var(--bg); border-left: 1px solid var(--line); overflow-y: auto; padding: 10px 12px 20px;
-  box-shadow: -8px 0 30px rgba(0,0,0,.14); font-size: 12.5px;
+  position: fixed; inset: 0; width: 100%; z-index: 50;
+  background: var(--bg); overflow-y: auto; padding: 10px 12px 20px;
+  font-size: 12.5px;
 }
 .settings-head { display: flex; align-items: center; justify-content: space-between; }
 .settings h2 { font-size: 15px; margin: 2px 0; }

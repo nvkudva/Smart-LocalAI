@@ -229,11 +229,14 @@ export default function App() {
       {settingsOpen && (
         <Suspense fallback={null}>
         <SettingsDrawer
+          availableModels={ep.availableModels}
           customPrompts={customPrompts}
           endpoint={endpoint}
           endpointLoading={ep.endpointLoading}
           endpointStatus={ep.endpointStatus}
           nanoStatus={ep.nanoStatus}
+          onSelectAuto={ep.selectAutoModel}
+          onSelectModel={ep.selectModel}
           onAddPrompt={(prompt) =>
             setCustomPrompts((current) => (current.includes(prompt) ? current : [...current, prompt]))
           }
