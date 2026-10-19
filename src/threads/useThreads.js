@@ -1,6 +1,11 @@
 import { useCallback, useState } from "react";
 import { createThreadId, forkMessages, threadTitle, upsertThread } from "../shared/extensionState.js";
+import { stripThinking } from "../models/thinking.js";
 import { downloadTextFile } from "../page/pageContext.js";
+
+function exportedContent(message) {
+  return message.role === "assistant" ? stripThinking(message.content) : String(message.content ?? "");
+}
 
 export function useThreads({ onResetChat, onStatus }) {
   const [threads, setThreads] = useState([]);
@@ -70,12 +75,12 @@ export function useThreads({ onResetChat, onStatus }) {
       const title = threadTitle(messages);
       const stamp = new Date().toISOString().slice(0, 10);
       if (format === "csv") {
-        const rows = [["role", "content"], ...messages.map((message) => [message.role, message.content])];
+        const rows = [["role", "content"], ...messages.map((message) => [message.role, exportedContent(message)])];
         const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
         downloadTextFile(`smartlocalai-${stamp}.csv`, csv, "text/csv");
       } else {
         const markdown = `# ${title}\n\n${messages
-          .map((message) => `${message.role === "user" ? "## You" : "## Smart LocalAI"}\n\n${String(message.content ?? "")}`)
+          .map((message) => `${message.role === "user" ? "## You" : "## Smart LocalAI"}\n\n${exportedContent(message)}`)
           .join("\n\n")}\n`;
         downloadTextFile(`smartlocalai-${stamp}.md`, markdown, "text/markdown");
       }

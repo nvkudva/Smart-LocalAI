@@ -1,3 +1,4 @@
+import * as thinking from "./thinking.js";
 import { authHeaders, nanoAPI, nanoLanguageOptions, normalizeBase } from "./providers.js";
 
 function drainLines(buffer, parseEvent, onToken) {
@@ -78,11 +79,15 @@ async function streamOpenAI(provider, model, messages, onToken, signal, options 
   });
   if (!res.ok) throw new Error(await errorText(res));
   if (!res.body) throw new Error("No response stream");
+  const wrap = thinking.wrapReasoning();
   return readSse(res, (line) => {
     if (!line.startsWith("data:")) return "";
     const payload = line.slice(5).trim();
     if (payload === "[DONE]") return "";
-    try { return JSON.parse(payload).choices?.[0]?.delta?.content || ""; } catch { return ""; }
+    try {
+      const delta = JSON.parse(payload).choices?.[0]?.delta;
+      return wrap({ reasoning: delta?.reasoning_content || delta?.reasoning, content: delta?.content });
+    } catch { return ""; }
   }, onToken);
 }
 
@@ -95,9 +100,13 @@ async function streamOllama(provider, model, messages, onToken, signal) {
     signal
   });
   if (!res.ok) throw new Error(await errorText(res));
+  const wrap = thinking.wrapReasoning();
   return readSse(res, (line) => {
     if (!line) return "";
-    try { return JSON.parse(line).message?.content || ""; } catch { return ""; }
+    try {
+      const message = JSON.parse(line).message;
+      return wrap({ reasoning: message?.thinking, content: message?.content });
+    } catch { return ""; }
   }, onToken);
 }
 

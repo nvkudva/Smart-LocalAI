@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { NANO_LABELS } from "../shared/constants.js";
 import AdvancedSection from "./advancedSection.jsx";
-import { PROVIDER_TYPES, modelCapabilities, pickSmartModel } from "../models/providers.js";
+import { PROVIDER_TYPES, modelCapabilities, modelLabel, pickSmartModel } from "../models/providers.js";
 import * as Icons from "../shared/icons.jsx";
 
 function Field({ label, htmlFor, children }) {
@@ -59,6 +59,13 @@ export default function SettingsDrawer({
       (marked) => String(marked).toLowerCase() !== currentModel.toLowerCase(),
     );
     onEndpointChange("visionOverride", checked ? [...rest, currentModel] : rest);
+  };
+
+  const thinkingKey = currentModel ? modelLabel(PROVIDER_TYPES[endpoint.type], currentModel) : "";
+  const hiddenThinkingModels = settings.hideThinkingModels || [];
+  const toggleShowThinking = (checked) => {
+    const rest = hiddenThinkingModels.filter((key) => key !== thinkingKey);
+    onSettingsChange("hideThinkingModels", checked ? rest : [...rest, thinkingKey]);
   };
 
   useEffect(() => {
@@ -155,6 +162,13 @@ export default function SettingsDrawer({
               </button>
             </div>
             <div className="model-results">{endpointStatus}</div>
+            {currentModel && (
+              <Checkbox
+                checked={!hiddenThinkingModels.includes(thinkingKey)}
+                label={`Show thinking for "${currentModel}"`}
+                onChange={toggleShowThinking}
+              />
+            )}
             {currentModel && !autoVision && (
               <Checkbox
                 checked={overrideVision}

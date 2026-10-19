@@ -237,6 +237,10 @@
   }
 
   // Asks the local server whether a model accepts images. null = unknown.
+  function modelLabel(provider, model) {
+    return `${provider.name} · ${model}`;
+  }
+
   async function detectVision(provider, model) {
     const base = normalizeBase(provider.baseUrl);
     try {
@@ -293,6 +297,7 @@ export {
   pickSmartModel,
   rankModels,
   listModels,
+  modelLabel,
   detectVision,
   detectLocal,
   modelCapabilities,

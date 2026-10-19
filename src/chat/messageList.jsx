@@ -58,6 +58,7 @@ export default function MessageList({
   actionCards,
   chunks,
   providerStatus,
+  hiddenThinkingModels,
   onCitation,
   onFork,
   onSuggestion,
@@ -79,9 +80,14 @@ export default function MessageList({
       {showEmpty && <EmptyState onSuggestion={onSuggestion} providerStatus={providerStatus} />}
       <div>
         {messages.map((message, index) => (
-          <Message chunks={message.chunks ?? chunks} index={index} key={message.id || `${message.role}-${String(message.content ?? "").slice(0, 48)}`} message={message} onCitation={onCitation} onFork={onFork} />
+          <Message chunks={message.chunks ?? chunks} index={index} isThinkingHidden={hiddenThinkingModels.includes(message.modelName)} key={message.id || `${message.role}-${String(message.content ?? "").slice(0, 48)}`} message={message} onCitation={onCitation} onFork={onFork} />
         ))}
-        {streamingMessage && <Message chunks={chunks} message={streamingMessage} onCitation={onCitation} />}
+        {streamingMessage && <Message
+            chunks={chunks}
+            isThinkingHidden={hiddenThinkingModels.includes(streamingMessage.modelName)}
+            message={streamingMessage}
+            onCitation={onCitation}
+          />}
         {actionCards.map((card) => (
           <ActionCard card={card} key={card.id} onApply={onApplyAction} onSkip={onSkipAction} />
         ))}

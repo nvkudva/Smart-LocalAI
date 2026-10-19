@@ -1,24 +1,24 @@
-import HistoryMenu from "../chat/historyMenu.jsx";
 import * as Icons from "./icons.jsx";
 
-export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpenSettings, historyMenuProps }) {
+export function Header({ isHistoryOpen, onToggleHistory, onNewChat, onToggleTheme, onOpenSettings }) {
   return (
     <header className="topbar">
-      <span className="topbar-spacer" />
       <div className="top-actions">
         <button
+          aria-expanded={isHistoryOpen}
           aria-label="Chat history"
-          className="icon-btn"
-          data-menu-toggle="history"
-          onClick={() => onToggleMenu("history")}
+          className={`icon-btn ${isHistoryOpen ? "is-on" : ""}`}
+          onClick={onToggleHistory}
           title="Chat history"
           type="button"
         >
           <Icons.History />
         </button>
         <button aria-label="New chat" className="icon-btn" onClick={onNewChat} title="New chat" type="button">
-          <Icons.Plus />
+          <Icons.NewChat />
         </button>
+      </div>
+      <div className="top-actions">
         <button aria-label="Toggle theme" className="icon-btn" onClick={onToggleTheme} title="Toggle theme" type="button">
           <Icons.Theme />
         </button>
@@ -26,8 +26,6 @@ export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpe
           <Icons.Settings />
         </button>
       </div>
-
-      {openMenu === "history" && <HistoryMenu {...historyMenuProps} />}
     </header>
   );
 }

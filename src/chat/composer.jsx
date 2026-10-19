@@ -1,12 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as Icons from "../shared/icons.jsx";
 
-function shortModelLabel(active) {
-  if (!active) return "No model";
-  const name = String(active.model || "");
-  return name.length > 11 ? `${name.slice(0, 10)}…` : name;
-}
-
 export default function Composer({
   input,
   settings,
@@ -122,13 +116,17 @@ export default function Composer({
             </button>
 
             <button
-              aria-label={safe ? "Permissions: approve page edits" : "Permissions: auto-apply page edits"}
-              className={`icon-btn composer-icon ${safe ? "is-warn" : "is-on"}`}
+              aria-checked={!safe}
+              className="auto-switch"
               onClick={onToggleSafe}
-              title={safe ? "Safe: approve edits — click for auto-apply" : "Auto-apply edits — click for safe approve"}
+              role="switch"
+              title={safe ? "Page edits wait for your approval — turn on to auto-apply" : "Page edits apply automatically — turn off to approve each"}
               type="button"
             >
-              {safe ? <Icons.ShieldOff /> : <Icons.Shield />}
+              <span className="auto-switch-track">
+                <span className="auto-switch-knob" />
+              </span>
+              <span className="auto-switch-label">Auto</span>
             </button>
           </div>
 
@@ -140,7 +138,7 @@ export default function Composer({
               title={active ? `${active.provider.name} · ${active.model}` : "Choose model"}
               type="button"
             >
-              <span className="model-opener-label">{shortModelLabel(active)}</span>
+              <span className="model-opener-label">{active ? active.model : "No model"}</span>
               <Icons.ChevronDown />
             </button>
 

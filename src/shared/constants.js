@@ -1,11 +1,12 @@
 export const DEFAULT_SETTINGS = {
-  safeMode: true,
+  safeMode: false,
   includePage: true,
   smartModel: true,
   autoTldr: false,
   theme: "light",
   systemPrompt: "",
   thinkingLevel: "medium",
+  hideThinkingModels: [],
 };
 
 export const THINKING_LEVELS = [

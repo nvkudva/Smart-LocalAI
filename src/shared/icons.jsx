@@ -61,6 +61,14 @@ export function Plus({ size }) {
     </Base>
   );
 }
+export function NewChat({ size }) {
+  return (
+    <Base size={size}>
+      <path d="M12 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5" />
+      <path d="M18.4 3.6a1.9 1.9 0 0 1 2.7 2.7L12 15.4l-3.6.9.9-3.6 9.1-9.1z" />
+    </Base>
+  );
+}
 export function Theme({ size }) {
   return (
     <Base size={size}>
@@ -126,22 +134,6 @@ export function Stop({ size = 14 }) {
   return (
     <Base filled size={size}>
       <rect height="10" rx="2" width="10" x="7" y="7" />
-    </Base>
-  );
-}
-export function Shield({ size }) {
-  return (
-    <Base size={size}>
-      <path d="M12 21.5s7.5-3.4 7.5-9.5V5.2L12 2.5 4.5 5.2V12c0 6.1 7.5 9.5 7.5 9.5z" />
-      <path d="m9 11.5 2.2 2.2L15.5 9.5" />
-    </Base>
-  );
-}
-export function ShieldOff({ size }) {
-  return (
-    <Base size={size}>
-      <path d="M12 21.5s7.5-3.4 7.5-9.5V5.2L12 2.5 4.5 5.2V12c0 6.1 7.5 9.5 7.5 9.5z" />
-      <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
     </Base>
   );
 }

@@ -3,12 +3,14 @@ import Composer from "../chat/composer.jsx";
 import { Header, SharingBar } from "../shared/header.jsx";
 import MessageList from "../chat/messageList.jsx";
 import ModelMenu from "../models/modelMenu.jsx";
+import HistoryPanel from "../chat/historyPanel.jsx";
 import PromptMenu from "../chat/promptMenu.jsx";
 import { useEndpoint } from "../models/useEndpoint.jsx";
 import { usePageContext } from "../page/usePageContext.js";
 import { useThreads } from "../threads/useThreads.js";
 import { TEXT_ACCEPT, useAttachments } from "../chat/useAttachments.js";
 
+const DOCKED_HISTORY_QUERY = "(min-width: 560px)";
 const SettingsDrawer = lazy(() => import("../settings/settingsDrawer.jsx"));
 import { DEFAULT_SETTINGS } from "../shared/constants.js";
 import { loadPersistedState, savePersistedState } from "../shared/storage.js";
@@ -21,6 +23,7 @@ export default function App() {
   const [customPrompts, setCustomPrompts] = useState([]);
   const [openMenu, setOpenMenu] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
   const [modelExpanded, setModelExpanded] = useState(false);
   const [input, setInput] = useState("");
@@ -126,27 +129,45 @@ export default function App() {
     [page.snapshot],
   );
 
+  const closeHistory = useCallback(() => setIsHistoryOpen(false), []);
+  const closeHistoryWhenOverlay = () => {
+    if (!window.matchMedia(DOCKED_HISTORY_QUERY).matches) setIsHistoryOpen(false);
+  };
+
   const displayedMessages = chat.notice ? [...messages, chat.notice] : messages;
 
   return (
-    <>
+    <div className="shell">
+      {isHistoryOpen && (
+        <>
+          <HistoryPanel
+            activeThreadId={activeThreadId}
+            onClose={closeHistory}
+            onDelete={th.deleteThread}
+            onExport={th.exportThread}
+            onOpen={(threadId) => {
+              th.openThread(threadId);
+              closeHistoryWhenOverlay();
+            }}
+            onQueryChange={setHistoryQuery}
+            query={historyQuery}
+            threads={threads}
+          />
+          <button aria-label="Close history" className="history-scrim" onClick={closeHistory} type="button" />
+        </>
+      )}
+      <div className="chat-col">
       <Header
-        historyMenuProps={{
-          threads,
-          activeThreadId,
-          query: historyQuery,
-          onQueryChange: setHistoryQuery,
-          onOpen: th.openThread,
-          onDelete: th.deleteThread,
-          onExport: th.exportThread,
+        isHistoryOpen={isHistoryOpen}
+        onNewChat={() => {
+          th.startNewThread();
+          closeHistoryWhenOverlay();
         }}
-        onNewChat={th.startNewThread}
         onOpenSettings={() => setSettingsOpen(true)}
-        onToggleMenu={(menu) => setOpenMenu((current) => (current === menu ? null : menu))}
+        onToggleHistory={() => setIsHistoryOpen((current) => !current)}
         onToggleTheme={() =>
           setSettings((current) => ({ ...current, theme: current.theme === "dark" ? "light" : "dark" }))
         }
-        openMenu={openMenu}
       />
 
       <MessageList
@@ -158,6 +179,7 @@ export default function App() {
         onFork={(index) => th.forkThreadAt(index)}
         onSkipAction={(id) => chat.resolveAction(id, false)}
         onSuggestion={(suggestion) => chat.sendText(suggestion.prompt, suggestion.mode)}
+        hiddenThinkingModels={settings.hideThinkingModels}
         providerStatus={ep.providerSummary}
         streamingMessage={chat.streamingMessage}
       />
@@ -229,6 +251,8 @@ export default function App() {
         status={status}
       />
 
+      </div>
+
       {settingsOpen && (
         <Suspense fallback={null}>
         <SettingsDrawer
@@ -258,6 +282,6 @@ export default function App() {
         />
         </Suspense>
       )}
-    </>
+    </div>
   );
 }

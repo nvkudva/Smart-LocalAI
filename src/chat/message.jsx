@@ -2,6 +2,7 @@ import { memo } from "react";
 import { stripAgentBlocks } from "../page/pageAgent.js";
 import { formatTime } from "../shared/extensionState.js";
 import * as Icons from "../shared/icons.jsx";
+import * as thinking from "../models/thinking.js";
 import Markdown from "./markdown.jsx";
 
 function actionSummary(action) {
@@ -33,6 +34,26 @@ export function ActionCard({ card, onApply, onSkip }) {
       )}
       {card.result && <div className={`result ${card.ok ? "ok" : "fail"}`}>{card.result}</div>}
     </article>
+  );
+}
+
+function ThinkingBlock({ text, isThinking }) {
+  const lastLine = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .at(-1);
+  return (
+    <details className="think">
+      <summary>
+        <span className="think-chevron">
+          <Icons.ChevronDown size={12} />
+        </span>
+        <span className="think-label">{isThinking ? "Thinking…" : "Thought"}</span>
+        {isThinking && lastLine && <span className="think-peek">{lastLine}</span>}
+      </summary>
+      <div className="think-body">{text}</div>
+    </details>
   );
 }
 
@@ -75,7 +96,7 @@ function Meta({ message, index, onFork, children }) {
   );
 }
 
-export const Message = memo(function Message({ message, chunks, index, onCitation, onFork }) {
+export const Message = memo(function Message({ message, chunks, index, isThinkingHidden, onCitation, onFork }) {
   if (message.role === "user") {
     return (
       <div className="msg user">
@@ -85,8 +106,10 @@ export const Message = memo(function Message({ message, chunks, index, onCitatio
     );
   }
 
-  const sourceText = String(message.content ?? "");
-  const visibleText = stripAgentBlocks(sourceText) || sourceText;
+  const { thinking: reasoning, answer, isThinking } = thinking.splitThinking(message.content);
+  const visibleText = stripAgentBlocks(answer) || answer;
+  const hasReasoning = Boolean(reasoning) && !isThinkingHidden;
+  const isWaitingOnAnswer = !visibleText && Boolean(reasoning);
   return (
     <div className={`msg ai ${message.error ? "error" : ""}`}>
       <div className="ai-label">
@@ -95,16 +118,19 @@ export const Message = memo(function Message({ message, chunks, index, onCitatio
         </span>
         <span>{message.modelName || "Smart LocalAI"}</span>
       </div>
-      <div className="body">
-        <Markdown chunks={chunks} onCitation={onCitation} text={visibleText} />
-      </div>
+      {hasReasoning && <ThinkingBlock isThinking={isThinking} text={reasoning} />}
+      {(!isWaitingOnAnswer || isThinkingHidden) && (
+        <div className="body">
+          <Markdown chunks={chunks} onCitation={onCitation} text={visibleText} />
+        </div>
+      )}
       {!message.streaming && (
         <Meta index={index} message={message} onFork={onFork}>
           {message.tps ? <span className="msg-tps" title="Tokens per second">~{message.tps} tok/s</span> : null}
           <button
             aria-label="Copy message"
             className="mini-btn mini-icon"
-            onClick={(event) => copyText(event, message.content)}
+            onClick={(event) => copyText(event, answer)}
             title="Copy message"
             type="button"
           >

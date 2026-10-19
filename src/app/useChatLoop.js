@@ -11,7 +11,8 @@ import { createThreadId, tokensPerSecond } from "../shared/extensionState.js";
 import { buildPageContext } from "../page/pageContext.js";
 import * as storage from "../shared/storage.js";
 import * as PageAgent from "../page/pageAgent.js";
-import { modelCapabilities, userMessageWithAttachments } from "../models/providers.js";
+import { modelCapabilities, modelLabel, userMessageWithAttachments } from "../models/providers.js";
+import * as thinking from "../models/thinking.js";
 import { streamChat } from "../models/streamTransports.js";
 
 /**
@@ -193,7 +194,11 @@ export function useChatLoop({
       const system = [customSystem, baseSystem, thinkingHint].filter(Boolean).join("\n\n") + context.text;
       const recentHistory = requestHistory.slice(-12);
       const firstUserIndex = recentHistory.findIndex((message) => message.role === "user");
-      const alignedHistory = recentHistory.slice(Math.max(firstUserIndex, 0));
+      const alignedHistory = recentHistory
+        .slice(Math.max(firstUserIndex, 0))
+        .map((message) =>
+          message.role === "assistant" ? { ...message, content: thinking.stripThinking(message.content) } : message,
+        );
       let requestMessages = [{ role: "system", content: system }, ...alignedHistory];
       if (outgoing) requestMessages[requestMessages.length - 1] = outgoing;
       let finalText = "";
@@ -202,7 +207,7 @@ export function useChatLoop({
 
       try {
         for (let iteration = 0; iteration < 5; iteration += 1) {
-          const modelName = `${active.provider.name} · ${active.model}`;
+          const modelName = modelLabel(active.provider, active.model);
           streamBufferRef.current = "";
           streamFlushRef.current = 0;
           setStreamingMessage({ role: "assistant", content: "", modelName, streaming: true });
@@ -224,7 +229,8 @@ export function useChatLoop({
           );
           finalText = full;
           setStreamingMessage({ role: "assistant", content: full, modelName, streaming: true });
-          const actions = agentIntent ? PageAgent.parseAgentActions(full) : [];
+          const answer = thinking.stripThinking(full);
+          const actions = agentIntent ? PageAgent.parseAgentActions(answer) : [];
           if (!actions.length) break;
           const signature = JSON.stringify(actions);
           if (signature === previousSignature) break;
@@ -239,7 +245,7 @@ export function useChatLoop({
           const refreshedSnapshot = await page.refreshPage();
           requestMessages = [
             ...requestMessages,
-            { role: "assistant", content: full },
+            { role: "assistant", content: answer },
             {
               role: "user",
               content:
@@ -275,7 +281,7 @@ export function useChatLoop({
               id: createThreadId(),
               role: "assistant",
               content: visibleText,
-              modelName: `${active.provider.name} · ${active.model}`,
+              modelName: modelLabel(active.provider, active.model),
               chunks: context.chunks,
               createdAt: Date.now(),
               tps: tokensPerSecond(visibleText.length, performance.now() - startedAt),
