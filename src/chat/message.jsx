@@ -21,14 +21,16 @@ export function ActionCard({ card, onApply, onSkip }) {
       <h4>Page action · {summary.title}</h4>
       <div className="target">{summary.target}</div>
       {summary.payload && <pre>{summary.payload}</pre>}
-      <div className="row">
-        <button className="btn primary" disabled={!pending} onClick={() => onApply(card.id)} type="button">
-          Apply
-        </button>
-        <button className="btn" disabled={!pending} onClick={() => onSkip(card.id)} type="button">
-          Skip
-        </button>
-      </div>
+      {pending && (
+        <div className="row">
+          <button className="btn primary" onClick={() => onApply(card.id)} type="button">
+            Apply
+          </button>
+          <button className="btn" onClick={() => onSkip(card.id)} type="button">
+            Skip
+          </button>
+        </div>
+      )}
       {card.result && <div className={`result ${card.ok ? "ok" : "fail"}`}>{card.result}</div>}
     </article>
   );

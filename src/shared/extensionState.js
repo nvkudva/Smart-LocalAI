@@ -166,7 +166,6 @@ export function stateForStorage({ endpoint, settings, threads, activeThreadId, m
   return {
     "freeai.endpoint": endpoint,
     "freeai.settings": settings,
-    "freeai.history": messages.slice(-40),
     "freeai.threads": upsertThread(threads, activeThreadId, messages).slice(0, 30),
     "freeai.activeThread": activeThreadId,
     "freeai.customPrompts": customPrompts.slice(0, 50),

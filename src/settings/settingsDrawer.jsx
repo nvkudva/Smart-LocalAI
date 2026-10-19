@@ -98,7 +98,6 @@ export default function SettingsDrawer({
         {nanoEnabled ? (
           <p className="model-results">Endpoint paused while the built-in model is on. Untick it to edit the endpoint.</p>
         ) : (
-        <>
         <div className="api-card">
           <div className="provider-row">
             <Field htmlFor="epType" label="API provider">
@@ -164,7 +163,6 @@ export default function SettingsDrawer({
             )}
           </div>
         </div>
-        </>
         )}
       </section>
 

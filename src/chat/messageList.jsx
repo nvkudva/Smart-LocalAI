@@ -75,7 +75,7 @@ export default function MessageList({
   });
 
   return (
-    <main className="messages" ref={mainRef}>
+    <main aria-live="polite" className="messages" ref={mainRef} role="log">
       {showEmpty && <EmptyState onSuggestion={onSuggestion} providerStatus={providerStatus} />}
       <div>
         {messages.map((message, index) => (

@@ -9,7 +9,7 @@ import {
 import { isPageActionIntent } from "../page/intent.js";
 import { createThreadId, tokensPerSecond } from "../shared/extensionState.js";
 import { buildPageContext } from "../page/pageContext.js";
-import { takePendingPrompt } from "../shared/storage.js";
+import * as storage from "../shared/storage.js";
 import * as PageAgent from "../page/pageAgent.js";
 import { modelCapabilities, userMessageWithAttachments } from "../models/providers.js";
 import { streamChat } from "../models/streamTransports.js";
@@ -38,19 +38,27 @@ export function useChatLoop({
   const [chunks, setChunks] = useState([]);
 
   const abortRef = useRef(null);
+  const isDiscardingRef = useRef(false);
   const actionResolversRef = useRef(new Map());
   const lastTldrRef = useRef("");
-  const pendingHandledRef = useRef(false);
   const sendTextRef = useRef(null);
   const streamFlushRef = useRef(0);
   const streamBufferRef = useRef("");
 
+  const cancelPendingActions = useCallback(() => {
+    for (const resolve of actionResolversRef.current.values()) resolve(false);
+    actionResolversRef.current.clear();
+  }, []);
+
   const resetChat = useCallback(() => {
+    isDiscardingRef.current = true;
+    abortRef.current?.abort();
+    cancelPendingActions();
     setActionCards([]);
     setStreamingMessage(null);
     setNotice(null);
     setChunks([]);
-  }, []);
+  }, [cancelPendingActions]);
 
   const updateActionCard = useCallback((id, patch) => {
     setActionCards((current) => current.map((card) => (card.id === id ? { ...card, ...patch } : card)));
@@ -163,6 +171,8 @@ export function useChatLoop({
       const requestHistory = [...messages, userMessage];
       threadsApi.setMessages(requestHistory);
       setNotice(null);
+      setActionCards([]);
+      isDiscardingRef.current = false;
       onClearInput();
       setAttachments([]);
       setBusy(true);
@@ -181,7 +191,10 @@ export function useChatLoop({
       const customSystem = String(settings.systemPrompt || "").trim();
       const thinkingHint = THINKING_HINTS[settings.thinkingLevel] || THINKING_HINTS.medium;
       const system = [customSystem, baseSystem, thinkingHint].filter(Boolean).join("\n\n") + context.text;
-      let requestMessages = [{ role: "system", content: system }, ...requestHistory.slice(-12)];
+      const recentHistory = requestHistory.slice(-12);
+      const firstUserIndex = recentHistory.findIndex((message) => message.role === "user");
+      const alignedHistory = recentHistory.slice(Math.max(firstUserIndex, 0));
+      let requestMessages = [{ role: "system", content: system }, ...alignedHistory];
       if (outgoing) requestMessages[requestMessages.length - 1] = outgoing;
       let finalText = "";
       let previousSignature = "";
@@ -241,7 +254,20 @@ export function useChatLoop({
           ];
           if (results.every((result) => !result.ok)) break;
         }
-        if (finalText) {
+      } catch (error) {
+        if (error.name === "AbortError") {
+          finalText = streamBufferRef.current || finalText;
+        } else {
+          setNotice({
+            id: "notice-error",
+            role: "assistant",
+            content: `Error: ${error.message}\n\nCheck endpoint, API key, and that the local server is running.`,
+            modelName: active.provider.name,
+            error: true,
+          });
+        }
+      } finally {
+        if (finalText && !isDiscardingRef.current) {
           const visibleText = PageAgent.stripAgentBlocks(finalText) || finalText;
           threadsApi.setMessages((current) => [
             ...current,
@@ -256,17 +282,6 @@ export function useChatLoop({
             },
           ]);
         }
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          setNotice({
-            id: "notice-error",
-            role: "assistant",
-            content: `Error: ${error.message}\n\nCheck endpoint, API key, and that the local server is running.`,
-            modelName: active.provider.name,
-            error: true,
-          });
-        }
-      } finally {
         setStreamingMessage(null);
         setBusy(false);
         abortRef.current = null;
@@ -294,13 +309,15 @@ export function useChatLoop({
   sendTextRef.current = sendText;
 
   useEffect(() => {
-    if (!loaded || pendingHandledRef.current) return;
-    pendingHandledRef.current = true;
-    takePendingPrompt()
-      .then((prompt) => {
-        if (prompt) sendTextRef.current?.(prompt, "chat");
-      })
-      .catch(() => {});
+    if (!loaded) return undefined;
+    const runPendingPrompt = () =>
+      storage.takePendingPrompt()
+        .then((prompt) => {
+          if (prompt) sendTextRef.current?.(prompt, "chat");
+        })
+        .catch(() => {});
+    runPendingPrompt();
+    return storage.onPendingPrompt(runPendingPrompt);
   }, [loaded]);
 
   useEffect(() => {
@@ -321,8 +338,7 @@ export function useChatLoop({
     sendText,
     stopStream: () => {
       abortRef.current?.abort();
-      for (const resolve of actionResolversRef.current.values()) resolve(false);
-      actionResolversRef.current.clear();
+      cancelPendingActions();
     },
     streamingMessage,
   };

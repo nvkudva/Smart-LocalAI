@@ -69,8 +69,8 @@ async function streamOpenAI(provider, model, messages, onToken, signal, options 
     body.temperature = 0.4;
     body.max_tokens = 4096;
   }
-  if (options.reasoningEffort && !provider.local) body.reasoning_effort = options.reasoningEffort;
-  const res = await fetch(base + "/chat/completions", {
+  if (options.reasoningEffort && reasoningModel) body.reasoning_effort = options.reasoningEffort;
+  const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: authHeaders(provider),
     body: JSON.stringify(body),
@@ -88,7 +88,7 @@ async function streamOpenAI(provider, model, messages, onToken, signal, options 
 
 async function streamOllama(provider, model, messages, onToken, signal) {
   const base = normalizeBase(provider.baseUrl);
-  const res = await fetch(base + "/api/chat", {
+  const res = await fetch(`${base}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, messages, stream: true }),
@@ -105,7 +105,7 @@ async function streamAnthropic(provider, model, messages, onToken, signal) {
   const base = normalizeBase(provider.baseUrl);
   const system = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
   const rest = messages.filter((m) => m.role !== "system").map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content }));
-  const res = await fetch(base + "/v1/messages", {
+  const res = await fetch(`${base}/v1/messages`, {
     method: "POST",
     headers: authHeaders(provider),
     body: JSON.stringify({ model, max_tokens: 4096, system: system || undefined, messages: rest, stream: true }),
@@ -129,7 +129,7 @@ async function streamGemini(provider, model, messages, onToken, signal) {
     parts: m.parts || [{ text: m.content }]
   }));
   const key = encodeURIComponent((provider.apiKey || "").trim());
-  const url = base + "/models/" + encodeURIComponent(model) + ":streamGenerateContent?alt=sse&key=" + key;
+  const url = `${base}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${key}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -147,7 +147,7 @@ async function streamGemini(provider, model, messages, onToken, signal) {
 async function errorText(res) {
   let body = "";
   try { body = (await res.text()).slice(0, 400); } catch { /* ignore */ }
-  return "HTTP " + res.status + (body ? " — " + body : "");
+  return `HTTP ${res.status}${body ? ` — ${body}` : ""}`;
 }
 
 /**

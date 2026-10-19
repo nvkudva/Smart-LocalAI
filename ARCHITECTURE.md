@@ -12,5 +12,4 @@ owns page context and injected actions; `settings/` owns configuration UI;
 sidebar-side wrappers; `injectedPage.js` owns serializable page functions.
 
 Decisions: behavior-preserving refactor only; `git mv` preserves history; Biome
-remains the formatter/linter; no test harness exists, so `bun run build` and
-`bun run lint` verify each commit.
+remains the formatter/linter; `bun test`, `bun run build` and `bun run lint` verify each commit.

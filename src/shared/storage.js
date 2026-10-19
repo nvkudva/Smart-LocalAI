@@ -1,10 +1,12 @@
 import { normalizeStoredState, stateForStorage } from "./extensionState.js";
 
+const LEGACY_HISTORY_KEY = "freeai.history";
+
 const STORAGE_KEYS = [
   "freeai.endpoint",
   "freeai.providers",
   "freeai.settings",
-  "freeai.history",
+  LEGACY_HISTORY_KEY,
   "freeai.threads",
   "freeai.activeThread",
   "freeai.customPrompts",
@@ -33,6 +35,7 @@ export async function savePersistedState(state) {
   try {
     if (hasChromeStorage()) {
       await chrome.storage.local.set(data);
+      await chrome.storage.local.remove(LEGACY_HISTORY_KEY);
       return;
     }
     localStorage.setItem("freeai.react-state", JSON.stringify(data));
@@ -45,4 +48,13 @@ export async function takePendingPrompt() {
   if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) return null;
   const pending = await chrome.runtime.sendMessage({ type: "TAKE_PENDING_PROMPT" });
   return pending?.prompt || null;
+}
+
+export function onPendingPrompt(listener) {
+  if (typeof chrome === "undefined" || !chrome.storage?.onChanged) return () => {};
+  const handleChange = (changes, area) => {
+    if (area === "session" && changes.pendingPrompt?.newValue) listener();
+  };
+  chrome.storage.onChanged.addListener(handleChange);
+  return () => chrome.storage.onChanged.removeListener(handleChange);
 }

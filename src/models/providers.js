@@ -1,10 +1,5 @@
 // Provider registry, auto-detection, smart model scoring, streaming chat.
 
-const PRESETS = [
-    { id: "lmstudio", name: "LM Studio", protocol: "openai", baseUrl: "http://localhost:1234/v1", local: true, auth: "none" },
-    { id: "ollama", name: "Ollama", protocol: "ollama", baseUrl: "http://localhost:11434", local: true, auth: "none" }
-  ];
-
   // Single endpoint card: preset (prefilled URL, still editable) or custom.
   const PROVIDER_TYPES = {
     lmstudio: { name: "LM Studio", protocol: "openai", baseUrl: "http://localhost:1234/v1", auth: "none", local: true },
@@ -37,10 +32,11 @@ const PRESETS = [
     if (provider.auth === "x-api-key") {
       headers["x-api-key"] = key;
       headers["anthropic-version"] = "2023-06-01";
+      headers["anthropic-dangerous-direct-browser-access"] = "true";
     } else if (provider.auth === "custom" && provider.authHeader) {
       headers[provider.authHeader] = key;
     } else if (provider.auth !== "none" && provider.auth !== "query") {
-      headers.Authorization = "Bearer " + key;
+      headers.Authorization = `Bearer ${key}`;
     }
     return headers;
   }
@@ -210,15 +206,15 @@ const PRESETS = [
       return [NANO_MODEL];
     }
     if (provider.protocol === "ollama") {
-      const res = await fetchWithTimeout(base + "/api/tags", {}, 4000);
-      if (!res.ok) throw new Error("Ollama " + res.status);
+      const res = await fetchWithTimeout(`${base}/api/tags`, {}, 4000);
+      if (!res.ok) throw new Error(`Ollama ${res.status}`);
       const data = await res.json();
       return (data.models || []).map((m) => m.name).filter(Boolean);
     }
     if (provider.protocol === "anthropic") {
       // Anthropic has no public list for all keys; return known-good defaults merged with API if available.
       try {
-        const res = await fetchWithTimeout(base + "/v1/models", { headers: authHeaders(provider) }, 4000);
+        const res = await fetchWithTimeout(`${base}/v1/models`, { headers: authHeaders(provider) }, 4000);
         if (res.ok) {
           const data = await res.json();
           const names = (data.data || []).map((m) => m.id).filter(Boolean);
@@ -229,13 +225,13 @@ const PRESETS = [
     }
     if (provider.protocol === "gemini") {
       const key = encodeURIComponent((provider.apiKey || "").trim());
-      const res = await fetchWithTimeout(base + "/models?key=" + key, {}, 4000);
-      if (!res.ok) throw new Error("Gemini " + res.status);
+      const res = await fetchWithTimeout(`${base}/models?key=${key}`, {}, 4000);
+      if (!res.ok) throw new Error(`Gemini ${res.status}`);
       const data = await res.json();
       return (data.models || []).map((m) => String(m.name || "").replace("models/", "")).filter((n) => n.includes("gemini"));
     }
-    const res = await fetchWithTimeout(base + "/models", { headers: authHeaders(provider) }, 5000);
-    if (!res.ok) throw new Error("Models " + res.status);
+    const res = await fetchWithTimeout(`${base}/models`, { headers: authHeaders(provider) }, 5000);
+    if (!res.ok) throw new Error(`Models ${res.status}`);
     const data = await res.json();
     return (data.data || []).map((m) => m.id).filter(Boolean);
   }
@@ -252,13 +248,14 @@ const PRESETS = [
   }
 
   async function detectLocal() {
-    const locals = PRESETS.filter((p) => p.local);
+    const locals = Object.entries(PROVIDER_TYPES)
+      .filter(([, type]) => type.local)
+      .map(([id, type]) => ({ id, ...type }));
     const results = await Promise.all(locals.map(async (preset) => ({ preset, ...(await probeLocal(preset)) })));
     return results;
   }
 
 export {
-  PRESETS,
   PROVIDER_TYPES,
   NANO_MODEL,
   nanoLanguageOptions,
@@ -270,7 +267,6 @@ export {
   rankModels,
   listModels,
   detectLocal,
-  probeLocal,
   modelCapabilities,
   userMessageWithAttachments,
   authHeaders,

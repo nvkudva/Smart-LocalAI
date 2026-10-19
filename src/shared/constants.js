@@ -62,7 +62,7 @@ export const RESPONSE_FORMAT =
   "Format every answer with rich Markdown: short section headings, bullets for lists, **bold** for key terms, fenced code blocks with a language tag, tables for comparisons. Structured and scannable, never a plain wall of text. Keep it tight — no filler, no raw HTML.";
 
 export const SYSTEM_CHAT =
-  "You are Smart LocalAI, a helpful assistant in a browser sidebar. Be concise. " + RESPONSE_FORMAT;
+  `You are Smart LocalAI, a helpful assistant in a browser sidebar. Be concise. ${RESPONSE_FORMAT}`;
 
 export const SYSTEM_AGENT = `${SYSTEM_CHAT}
 
