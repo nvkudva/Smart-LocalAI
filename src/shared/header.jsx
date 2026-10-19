@@ -4,14 +4,6 @@ import * as Icons from "./icons.jsx";
 export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpenSettings, historyMenuProps }) {
   return (
     <header className="topbar">
-      <div className="brand">
-        <span className="brand-mark">
-          <Icons.Logo size={22} />
-        </span>
-        <span className="brand-name">
-          Smart <b>LocalAI</b>
-        </span>
-      </div>
       <span className="topbar-spacer" />
       <div className="top-actions">
         <button

@@ -137,7 +137,10 @@ export function useChatLoop({
         return;
       }
 
-      if (attachments.some((file) => file.kind === "image") && !modelCapabilities(active.model, active.provider.protocol).vision) {
+      if (
+        attachments.some((file) => file.kind === "image") &&
+        !modelCapabilities(active.model, active.provider.protocol, active.visionOverride).vision
+      ) {
         onStatus("This model can't read images — remove them or switch to a vision model.");
         return;
       }

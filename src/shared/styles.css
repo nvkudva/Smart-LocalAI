@@ -401,10 +401,16 @@ body[data-theme="dark"] .composer .composer-icon:hover { background: rgba(255,25
   padding: 5px 8px; font-size: 12.5px; border-radius: 8px;
 }
 .settings .btn { padding: 5px 10px; font-size: 12px; }
+.advanced {
+  border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; margin-top: 12px;
+  display: grid; gap: 4px;
+}
 .advanced summary {
   cursor: pointer; font-size: 11px; font-weight: 600; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--muted); margin: 14px 0 8px;
+  text-transform: uppercase; color: var(--muted); margin: 2px 0;
 }
+.advanced section { margin-top: 6px; }
+.my-prompts { background: var(--surface); border-radius: 8px; padding: 6px 8px; }
 .settings .row { gap: 6px; }
 .settings .model-row { align-items: flex-end; flex-wrap: nowrap; }
 .settings .model-row .field { flex: 1; min-width: 0; }

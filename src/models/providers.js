@@ -78,18 +78,32 @@ const PRESETS = [
 
   // Attachment support per model. Text files are inlined as text everywhere;
   // images need a vision-capable model, PDFs need a native document API.
-  function modelCapabilities(modelName, protocol) {
+  // visionOverride: model names the user marked as vision-capable (custom local
+  // names like "ornith" can't be detected). Case-insensitive exact match.
+  function modelCapabilities(modelName, protocol, visionOverride) {
     const name = String(modelName || "").toLowerCase();
     const p = protocol || "openai";
+    const forced = Array.isArray(visionOverride) && visionOverride.some((marked) => String(marked).toLowerCase() === name);
     if (p === "anthropic" || p === "gemini") return { vision: true, pdf: true };
     if (p === "nano") return { vision: false, pdf: false };
     if (p === "ollama") {
       return {
-        vision: /(llava|moondream|minicpm-v|bakllava|vision|-vl\b|vl-|qwen.*vl|gemma-?3|llama-?3\.2)/.test(name),
+        vision:
+          forced ||
+          /(llava|moondream|minicpm-v|bakllava|pixtral|janus|internvl|cogvlm|vision|-vl\b|vl-|qwen.*vl|gemma-?3|llama-?3\.2)/.test(
+            name,
+          ),
         pdf: false,
       };
     }
-    return { vision: /(gpt-4o|gpt-5|o1|o3|o4|vision|computer-use)/.test(name), pdf: false };
+    return {
+      vision:
+        forced ||
+        /(gpt-4o|gpt-5|o1|o3|o4|vlm|llava|moondream|minicpm|pixtral|janus|internvl|cogvlm|qwen.*vl|vision|computer-use)/.test(
+          name,
+        ),
+      pdf: false,
+    };
   }
 
   function dataUrlParts(dataUrl) {

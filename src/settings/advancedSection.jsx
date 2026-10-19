@@ -24,7 +24,7 @@ export default function AdvancedSection({
   const [newPrompt, setNewPrompt] = useState("");
 
   return (
-    <details className="advanced">
+    <details className="advanced" open>
       <summary>Advanced</summary>
       <section>
         <h3>System prompt</h3>
@@ -64,7 +64,7 @@ export default function AdvancedSection({
         />
       </section>
 
-      <section>
+      <section className="my-prompts">
         <h3>My prompts</h3>
         <div className="row">
           <input

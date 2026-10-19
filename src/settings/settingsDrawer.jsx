@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { NANO_LABELS } from "../shared/constants.js";
 import AdvancedSection from "./advancedSection.jsx";
-import { PROVIDER_TYPES, pickSmartModel } from "../models/providers.js";
+import { PROVIDER_TYPES, modelCapabilities, pickSmartModel } from "../models/providers.js";
 import * as Icons from "../shared/icons.jsx";
 
 function Field({ label, htmlFor, children }) {
@@ -45,6 +45,20 @@ export default function SettingsDrawer({
   onClearHistory,
 }) {
   const nanoEnabled = endpoint.useNano && nanoStatus === "available";
+  const currentModel = endpoint.model || pickSmartModel(availableModels) || "";
+  const protocol = PROVIDER_TYPES[endpoint.type]?.protocol || "openai";
+  const autoVision = currentModel ? modelCapabilities(currentModel, protocol).vision : false;
+  const overrideVision = currentModel
+    ? (endpoint.visionOverride || []).some((marked) => String(marked).toLowerCase() === currentModel.toLowerCase())
+    : false;
+
+  const toggleVisionOverride = (checked) => {
+    if (!currentModel) return;
+    const rest = (endpoint.visionOverride || []).filter(
+      (marked) => String(marked).toLowerCase() !== currentModel.toLowerCase(),
+    );
+    onEndpointChange("visionOverride", checked ? [...rest, currentModel] : rest);
+  };
 
   useEffect(() => {
     const onKey = (event) => {
@@ -141,6 +155,13 @@ export default function SettingsDrawer({
               </button>
             </div>
             <div className="model-results">{endpointStatus}</div>
+            {currentModel && !autoVision && (
+              <Checkbox
+                checked={overrideVision}
+                label={`"${currentModel}" reads images (enable Attach image)`}
+                onChange={toggleVisionOverride}
+              />
+            )}
           </div>
         </div>
         </>

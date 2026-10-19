@@ -28,7 +28,9 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
   const activeProvider = useMemo(() => buildProvider(endpoint, nanoStatus), [endpoint, nanoStatus]);
   const active = useMemo(() => {
     const resolved = resolveActive(endpoint, nanoStatus, settings, detection);
-    return resolved ? { ...resolved, explicit: Boolean(endpoint.model) && !nanoEnabled } : null;
+    return resolved
+      ? { ...resolved, explicit: Boolean(endpoint.model) && !nanoEnabled, visionOverride: endpoint.visionOverride || [] }
+      : null;
   }, [detection, endpoint, nanoEnabled, nanoStatus, settings]);
 
   const detectProviders = useCallback(async () => {

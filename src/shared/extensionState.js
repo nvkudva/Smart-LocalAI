@@ -11,6 +11,7 @@ export function createDefaultEndpoint(type = "lmstudio") {
     model: "",
     remembered: {},
     useNano: false,
+    visionOverride: [],
   };
 }
 

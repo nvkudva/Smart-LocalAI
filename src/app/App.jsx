@@ -46,7 +46,10 @@ export default function App() {
   });
 
   const caps = useMemo(
-    () => (active ? modelCapabilities(active.model, active.provider.protocol) : { vision: false, pdf: false }),
+    () =>
+      active
+        ? modelCapabilities(active.model, active.provider.protocol, active.visionOverride)
+        : { vision: false, pdf: false },
     [active],
   );
   const chat = useChatLoop({
