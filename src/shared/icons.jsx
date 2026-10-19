@@ -16,6 +16,28 @@ function Base({ size = 18, filled = false, children }) {
   );
 }
 
+export function Logo({ size = 22 }) {
+  return (
+    <svg aria-hidden="true" height={size} viewBox="0 0 64 64" width={size}>
+      <defs>
+        <linearGradient id="logo-tile" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#F4F8FF" />
+          <stop offset="1" stopColor="#D3E3FD" />
+        </linearGradient>
+      </defs>
+      <rect fill="url(#logo-tile)" height="64" rx="15" width="64" />
+      <rect fill="none" height="62" rx="14" stroke="#1B3260" strokeOpacity=".12" strokeWidth="2" width="62" x="1" y="1" />
+      <path
+        d="M28 10c.9 10.5 4.2 16.8 13.5 21C32.2 35.2 28.9 41.5 28 54 27.1 41.5 23.8 35.2 14.5 31 23.8 26.8 27.1 20.5 28 10z"
+        fill="#1B3260"
+      />
+      <path
+        d="M47 9c.8 5 3 7.6 8 8.5-5 .9-7.2 3.5-8 8.5-.8-5-3-7.6-8-8.5 5-.9 7.2-3.5 8-8.5z"
+        fill="#2563EB"
+      />
+    </svg>
+  );
+}
 export function Sparkle({ size }) {
   return (
     <Base filled size={size}>

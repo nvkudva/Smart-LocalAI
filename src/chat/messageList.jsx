@@ -18,7 +18,7 @@ export function EmptyState({ providerStatus, onSuggestion }) {
       <div className="hero-card">
         <div className="hero-head">
           <span className="hero-mark">
-            <Icons.Sparkle size={15} />
+            <Icons.Logo size={26} />
           </span>
           <span className="hero-tag">Local-first · runs on your machine</span>
         </div>

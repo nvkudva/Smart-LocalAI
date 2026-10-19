@@ -6,7 +6,7 @@ export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpe
     <header className="topbar">
       <div className="brand">
         <span className="brand-mark">
-          <Icons.Sparkle size={13} />
+          <Icons.Logo size={22} />
         </span>
         <span className="brand-name">
           Smart <b>LocalAI</b>
