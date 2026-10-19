@@ -121,6 +121,7 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
       const next = {
         ...current,
         type,
+        useNano: false,
         baseUrl: preset.baseUrl,
         models: [],
         model: current.remembered[type] || "",
@@ -130,6 +131,19 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
       window.setTimeout(() => refreshModels(next), 0);
     },
     [refreshModels],
+  );
+
+  const changeModelProvider = useCallback(
+    (value) => {
+      if (value === "nano") {
+        const next = { ...endpointRef.current, useNano: true };
+        endpointRef.current = next;
+        setEndpoint(next);
+        return;
+      }
+      changeEndpointType(value);
+    },
+    [changeEndpointType],
   );
 
   const changeEndpointField = useCallback(
@@ -210,6 +224,7 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
     refreshModels,
     updateEndpoint,
     changeEndpointType,
+    changeModelProvider,
     changeEndpointField,
     commitEndpointField,
     rememberModel,

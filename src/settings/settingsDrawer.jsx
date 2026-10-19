@@ -37,10 +37,9 @@ export default function SettingsDrawer({
   availableModels,
   customPrompts,
   onClose,
-  onNanoChange,
   onDownloadNano,
   onEndpointChange,
-  onEndpointTypeChange,
+  onModelProviderChange,
   onEndpointBlur,
   onRefreshModels,
   onSelectAuto,
@@ -50,7 +49,7 @@ export default function SettingsDrawer({
   onDeletePrompt,
   onClearHistory,
 }) {
-  const nanoEnabled = endpoint.useNano && nanoStatus === "available";
+  const nanoSelected = endpoint.useNano;
   const currentModel = endpoint.model || pickSmartModel(availableModels) || "";
   const protocol = PROVIDER_TYPES[endpoint.type]?.protocol || "openai";
   const autoVision = isVisionDetected || (currentModel ? modelCapabilities(currentModel, protocol).vision : false);
@@ -92,36 +91,33 @@ export default function SettingsDrawer({
 
       <section>
         <h3>Model</h3>
-        <div className="provider-row nano-row">
-          <Checkbox
-            checked={endpoint.useNano}
-            label="Use Gemini Nano (Browser Built-in)"
-            onChange={(checked) => onNanoChange(checked)}
-          />
-          <div className="row">
-            <span className={`dot ${nanoStatus === "available" ? "dot-ok" : "dot-off"}`} />
-            <span className="model-results">{NANO_LABELS[nanoStatus] || nanoStatus}</span>
-            {nanoStatus === "downloadable" && (
-              <button className="btn" onClick={onDownloadNano} type="button">
-                Download model
-              </button>
-            )}
-          </div>
-        </div>
-        {nanoEnabled ? (
-          <p className="model-results">Endpoint paused while the built-in model is on. Untick it to edit the endpoint.</p>
-        ) : (
-        <div className="api-card">
-          <div className="provider-row">
-            <Field htmlFor="epType" label="API provider">
-              <select id="epType" onChange={(event) => onEndpointTypeChange(event.target.value)} value={endpoint.type}>
-                {Object.entries(PROVIDER_TYPES).map(([value, provider]) => (
-                  <option key={value} value={value}>
-                    {provider.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+        <div className="provider-row model-provider">
+          <Field htmlFor="epType" label="Model provider">
+            <select
+              id="epType"
+              onChange={(event) => onModelProviderChange(event.target.value)}
+              value={nanoSelected ? "nano" : endpoint.type}
+            >
+              <option value="nano">Gemini Nano (Browser Built-in)</option>
+              {Object.entries(PROVIDER_TYPES).map(([value, provider]) => (
+                <option key={value} value={value}>
+                  {provider.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          {nanoSelected ? (
+            <div className="row">
+              <span className={`dot ${nanoStatus === "available" ? "dot-ok" : "dot-off"}`} />
+              <span className="model-results">{NANO_LABELS[nanoStatus] || nanoStatus}</span>
+              {nanoStatus === "downloadable" && (
+                <button className="btn" onClick={onDownloadNano} type="button">
+                  Download model
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
             <Field htmlFor="epUrl" label="URL">
               <input
                 id="epUrl"
@@ -192,9 +188,9 @@ export default function SettingsDrawer({
                 onChange={toggleVisionOverride}
               />
             )}
-          </div>
+            </>
+          )}
         </div>
-        )}
       </section>
 
       <AdvancedSection

@@ -103,9 +103,7 @@ button { font-family: inherit; cursor: pointer; }
 .hist-item.active { background: var(--surface-2); }
 .hist-del { border: 0; background: transparent; color: var(--muted); padding: 4px; border-radius: 8px; flex: none; display: inline-grid; place-items: center; }
 .hist-del:hover { color: var(--danger); background: var(--surface); }
-.nano-row .row { align-items: center; }
-.api-card.disabled { opacity: .45; }
-.api-card.disabled .provider-row { background: var(--surface); }
+.model-provider .row { align-items: center; }
 .hist-open {
   display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; border: 0;
   background: transparent; color: inherit; padding: 0; text-align: left; font: inherit;
@@ -163,6 +161,7 @@ textarea.prompt-input { min-height: 48px; }
   background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 4px 6px 10px;
 }
 .prompt-row span { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.45; }
+.my-prompts .menu-empty { padding: 6px 10px 2px; }
 .sel-bar {
   display: flex; align-items: center; gap: 8px; margin: 8px 12px 0; padding: 7px 10px;
   background: var(--accent-soft); border-radius: 10px; font-size: 12px;
@@ -416,12 +415,9 @@ body[data-theme="dark"] .composer .composer-icon:hover { background: rgba(255,25
   border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; margin-top: 12px;
   display: grid; gap: 4px;
 }
-.advanced summary {
-  cursor: pointer; font-size: 11px; font-weight: 600; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--muted); margin: 2px 0;
-}
+.advanced > h3 { margin: 2px 0; }
 .advanced section { margin-top: 6px; }
-.my-prompts { background: var(--surface); border-radius: 8px; padding: 6px 8px; }
+.my-prompts { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; }
 .settings .row { gap: 6px; }
 .settings .model-row { align-items: flex-end; flex-wrap: nowrap; }
 .settings .model-row .field { flex: 1; min-width: 0; }

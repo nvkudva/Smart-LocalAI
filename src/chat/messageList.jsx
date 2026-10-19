@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { SUGGESTIONS } from "../shared/constants.js";
 import * as Icons from "../shared/icons.jsx";
 import { ActionCard, Message } from "./message.jsx";
@@ -67,16 +67,33 @@ export default function MessageList({
 }) {
   const showEmpty = messages.length === 0 && !streamingMessage && actionCards.length === 0;
   const mainRef = useRef(null);
+  const followBottomRef = useRef(true);
+  const tailRef = useRef({ headKey: "", lastMessageKey: "" });
 
-  useEffect(() => {
+  const firstMessage = messages[0];
+  const lastMessage = messages[messages.length - 1];
+  const headKey = firstMessage?.id || "";
+  const lastMessageKey = lastMessage?.id || (lastMessage ? `${lastMessage.role}:${messages.length}` : "");
+
+  useLayoutEffect(() => {
     const main = mainRef.current;
     if (!main) return;
-    const nearBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 120;
-    if (nearBottom) main.scrollTop = main.scrollHeight;
+    const previousTail = tailRef.current;
+    const conversationChanged = previousTail.headKey !== headKey;
+    const newUserMessage = lastMessage?.role === "user" && previousTail.lastMessageKey !== lastMessageKey;
+    if (conversationChanged || newUserMessage) followBottomRef.current = true;
+    tailRef.current = { headKey, lastMessageKey };
+    if (followBottomRef.current) main.scrollTop = main.scrollHeight;
   });
 
+  const handleScroll = () => {
+    const main = mainRef.current;
+    if (!main) return;
+    followBottomRef.current = main.scrollHeight - main.scrollTop - main.clientHeight < 120;
+  };
+
   return (
-    <main aria-live="polite" className="messages" ref={mainRef} role="log">
+    <main aria-live="polite" className="messages" onScroll={handleScroll} ref={mainRef} role="log">
       {showEmpty && <EmptyState onSuggestion={onSuggestion} providerStatus={providerStatus} />}
       <div>
         {messages.map((message, index) => (

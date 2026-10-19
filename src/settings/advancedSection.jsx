@@ -11,8 +11,53 @@ function Checkbox({ label, checked, onChange }) {
 }
 
 /**
- * Advanced settings: system prompt, agent behavior, saved prompts, and history reset.
+ * Advanced settings: system prompt, agent behavior, and history reset.
+ * Saved prompts render below as a separate section.
  */
+export function MyPromptsSection({ customPrompts, onAddPrompt, onDeletePrompt }) {
+  const [newPrompt, setNewPrompt] = useState("");
+
+  return (
+    <section className="my-prompts">
+      <h3>My prompts</h3>
+      <div className="row">
+        <textarea
+          className="prompt-input"
+          onChange={(event) => setNewPrompt(event.target.value)}
+          placeholder="New prompt, use {page} for page text"
+          rows={2}
+          value={newPrompt}
+        />
+        <button
+          className="btn"
+          onClick={() => {
+            if (!newPrompt.trim()) return;
+            onAddPrompt(newPrompt.trim());
+            setNewPrompt("");
+          }}
+          type="button"
+        >
+          Add
+        </button>
+      </div>
+      <div>
+        {customPrompts.length === 0 ? (
+          <div className="menu-empty">None yet.</div>
+        ) : (
+          customPrompts.map((prompt, index) => (
+            <div className="prompt-row" key={`${index}-${String(prompt).slice(0, 40)}`}>
+              <span>{prompt}</span>
+              <button aria-label="Delete prompt" className="hist-del" onClick={() => onDeletePrompt(index)} type="button">
+                <Icons.Trash />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function AdvancedSection({
   settings,
   customPrompts,
@@ -21,11 +66,10 @@ export default function AdvancedSection({
   onDeletePrompt,
   onClearHistory,
 }) {
-  const [newPrompt, setNewPrompt] = useState("");
-
   return (
-    <details className="advanced" open>
-      <summary>Advanced</summary>
+    <>
+    <div className="advanced">
+      <h3>Advanced</h3>
       <section>
         <h3>System prompt</h3>
         <label className="field" htmlFor="systemPrompt">
@@ -64,49 +108,13 @@ export default function AdvancedSection({
         />
       </section>
 
-      <section className="my-prompts">
-        <h3>My prompts</h3>
-        <div className="row">
-          <textarea
-            className="prompt-input"
-            onChange={(event) => setNewPrompt(event.target.value)}
-            placeholder="New prompt, use {page} for page text"
-            rows={2}
-            value={newPrompt}
-          />
-          <button
-            className="btn"
-            onClick={() => {
-              if (!newPrompt.trim()) return;
-              onAddPrompt(newPrompt.trim());
-              setNewPrompt("");
-            }}
-            type="button"
-          >
-            Add
-          </button>
-        </div>
-        <div>
-          {customPrompts.length === 0 ? (
-            <div className="menu-empty">None yet.</div>
-          ) : (
-            customPrompts.map((prompt, index) => (
-              <div className="prompt-row" key={`${index}-${String(prompt).slice(0, 40)}`}>
-                <span>{prompt}</span>
-                <button aria-label="Delete prompt" className="hist-del" onClick={() => onDeletePrompt(index)} type="button">
-                  <Icons.Trash />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
       <section>
         <button className="btn danger" onClick={onClearHistory} type="button">
           Clear chat history
         </button>
       </section>
-    </details>
+    </div>
+    <MyPromptsSection customPrompts={customPrompts} onAddPrompt={onAddPrompt} onDeletePrompt={onDeletePrompt} />
+    </>
   );
 }

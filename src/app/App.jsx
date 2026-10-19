@@ -274,8 +274,7 @@ export default function App() {
           onDownloadNano={ep.downloadNano}
           onEndpointBlur={ep.commitEndpointField}
           onEndpointChange={ep.changeEndpointField}
-          onEndpointTypeChange={ep.changeEndpointType}
-          onNanoChange={(checked) => ep.updateEndpoint("useNano", checked)}
+          onModelProviderChange={ep.changeModelProvider}
           onRefreshModels={() => ep.refreshModels()}
           onSettingsChange={(field, value) => setSettings((current) => ({ ...current, [field]: value }))}
           settings={settings}
