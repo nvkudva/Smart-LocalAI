@@ -41,7 +41,7 @@ For development, run `bun run dev`, then rebuild before reloading the unpacked e
 - **Attachments** — images (vision models), PDFs (Claude/Gemini), and code/text files ride along with your message.
 - **Prompt library** — type `/` for built-ins plus your own saved prompts with `{selection}` and `{page}` placeholders.
 - **Threads** — searchable history, per-chat export to Markdown/CSV, one-click clear (with confirm).
-- **Auto TL;DR** — optional 3-line summary the moment a new page opens.
+- **Auto Summary** — optional 3-line summary the moment a new page opens.
 - **Permissions** — the extension asks for `<all_urls>` only so local endpoints (LM Studio/Ollama on localhost) and page injection work everywhere; keys never leave your machine except to the endpoint you chose.
 
 ## Project layout

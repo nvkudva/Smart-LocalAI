@@ -7,7 +7,7 @@ import {
   isNanoEnabled,
   resolveActive,
 } from "../shared/extensionState.js";
-import { detectLocal, detectVision, listModels, nanoAvailability, nanoLanguageOptions, normalizeBase, pickSmartModel } from "./providers.js";
+import { detectLocal, detectVision, listModels, nanoAvailability, nanoLanguageOptions, normalizeBase } from "./providers.js";
 
 export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
   const [endpoint, setEndpoint] = useState(() => createDefaultEndpoint());
@@ -189,7 +189,7 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
     ? "Fetching models…"
     : endpointError ||
       (availableModels.length
-        ? `${availableModels.length} models · Smart: ${pickSmartModel(availableModels)}`
+        ? ""
         : PROVIDER_TYPES[endpoint.type]?.local && !detection[endpoint.type]?.ok
           ? `Offline — start ${PROVIDER_TYPES[endpoint.type].name}, then press Refresh.`
           : "No models listed — press Refresh.");

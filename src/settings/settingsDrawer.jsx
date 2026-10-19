@@ -4,10 +4,15 @@ import AdvancedSection from "./advancedSection.jsx";
 import { PROVIDER_TYPES, modelCapabilities, modelLabel, pickSmartModel } from "../models/providers.js";
 import * as Icons from "../shared/icons.jsx";
 
-function Field({ label, htmlFor, children }) {
+function Field({ label, htmlFor, children, hint }) {
   return (
     <label className="field" htmlFor={htmlFor}>
-      <span>{label}</span>
+      <span className="field-head">
+        <span>
+          {label}
+          {hint ? `: ${hint}` : null}
+        </span>
+      </span>
       {children}
     </label>
   );
@@ -137,7 +142,11 @@ export default function SettingsDrawer({
               />
             </Field>
             <div className="row model-row">
-              <Field htmlFor="epModel" label="Model">
+              <Field
+                hint={availableModels.length ? `${availableModels.length} models` : null}
+                htmlFor="epModel"
+                label="Model"
+              >
                 <select
                   id="epModel"
                   onChange={(event) => {
@@ -157,15 +166,22 @@ export default function SettingsDrawer({
                   ))}
                 </select>
               </Field>
-              <button className="btn primary" disabled={endpointLoading} onClick={onRefreshModels} type="button">
-                Refresh models
+              <button
+                aria-label="Refresh models"
+                className="icon-btn icon-btn-sm"
+                disabled={endpointLoading}
+                onClick={onRefreshModels}
+                title="Refresh models"
+                type="button"
+              >
+                <Icons.Refresh />
               </button>
             </div>
-            <div className="model-results">{endpointStatus}</div>
+            {endpointStatus ? <div className="model-results">{endpointStatus}</div> : null}
             {currentModel && (
               <Checkbox
                 checked={!hiddenThinkingModels.includes(thinkingKey)}
-                label={`Show thinking for "${currentModel}"`}
+                label="Show thinking"
                 onChange={toggleShowThinking}
               />
             )}

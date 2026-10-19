@@ -59,7 +59,7 @@ export default function AdvancedSection({
         />
         <Checkbox
           checked={settings.autoTldr}
-          label="Auto TL;DR when a new page opens"
+          label="Auto Summary when a new page opens"
           onChange={(checked) => onSettingsChange("autoTldr", checked)}
         />
       </section>
@@ -67,10 +67,11 @@ export default function AdvancedSection({
       <section className="my-prompts">
         <h3>My prompts</h3>
         <div className="row">
-          <input
+          <textarea
             className="prompt-input"
             onChange={(event) => setNewPrompt(event.target.value)}
             placeholder="New prompt, use {page} for page text"
+            rows={2}
             value={newPrompt}
           />
           <button

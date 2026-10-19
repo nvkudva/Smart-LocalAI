@@ -153,9 +153,16 @@ button { font-family: inherit; cursor: pointer; }
 .prompt-input {
   flex: 1; border: 1px solid var(--line); background: var(--bg); color: var(--text);
   border-radius: 10px; padding: 7px 10px; font-size: 13px; font-family: inherit; min-width: 0;
+  line-height: 1.45; resize: vertical;
 }
-.prompt-row { display: flex; gap: 6px; align-items: center; font-size: 13px; margin: 6px 0; }
-.prompt-row span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+textarea.prompt-input { min-height: 48px; }
+.my-prompts .row { align-items: flex-end; }
+.my-prompts .row .btn { flex: none; }
+.prompt-row {
+  display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; margin: 6px 0 0;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 4px 6px 10px;
+}
+.prompt-row span { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.45; }
 .sel-bar {
   display: flex; align-items: center; gap: 8px; margin: 8px 12px 0; padding: 7px 10px;
   background: var(--accent-soft); border-radius: 10px; font-size: 12px;
@@ -395,9 +402,12 @@ body[data-theme="dark"] .composer .composer-icon:hover { background: rgba(255,25
 .settings-head { display: flex; align-items: center; justify-content: space-between; }
 .settings h2 { font-size: 15px; margin: 2px 0; }
 .settings section { display: grid; gap: 6px; margin-top: 12px; }
+.settings section > * { min-width: 0; }
 .settings h3 { font-size: 11px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .settings .field { margin: 0; }
 .settings .field span { font-size: 11px; margin-bottom: 2px; }
+.field > .field-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.settings .field-head > span { margin-bottom: 0; }
 .settings .field input, .settings .field select, .settings .field textarea {
   padding: 5px 8px; font-size: 12.5px; border-radius: 8px;
 }

@@ -247,3 +247,10 @@ export function Trash({ size = 15 }) {
     </Base>
   );
 }
+export function Refresh({ size = 15 }) {
+  return (
+    <Base size={size}>
+      <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" />
+    </Base>
+  );
+}
