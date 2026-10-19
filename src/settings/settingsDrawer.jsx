@@ -28,6 +28,7 @@ export default function SettingsDrawer({
   nanoStatus,
   endpointStatus,
   endpointLoading,
+  isVisionDetected,
   availableModels,
   customPrompts,
   onClose,
@@ -47,7 +48,7 @@ export default function SettingsDrawer({
   const nanoEnabled = endpoint.useNano && nanoStatus === "available";
   const currentModel = endpoint.model || pickSmartModel(availableModels) || "";
   const protocol = PROVIDER_TYPES[endpoint.type]?.protocol || "openai";
-  const autoVision = currentModel ? modelCapabilities(currentModel, protocol).vision : false;
+  const autoVision = isVisionDetected || (currentModel ? modelCapabilities(currentModel, protocol).vision : false);
   const overrideVision = currentModel
     ? (endpoint.visionOverride || []).some((marked) => String(marked).toLowerCase() === currentModel.toLowerCase())
     : false;

@@ -236,6 +236,7 @@ export default function App() {
           customPrompts={customPrompts}
           endpoint={endpoint}
           endpointLoading={ep.endpointLoading}
+          isVisionDetected={ep.isVisionDetected}
           endpointStatus={ep.endpointStatus}
           nanoStatus={ep.nanoStatus}
           onSelectAuto={ep.selectAutoModel}

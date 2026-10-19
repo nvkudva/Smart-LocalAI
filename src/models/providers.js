@@ -236,6 +236,33 @@
     return (data.data || []).map((m) => m.id).filter(Boolean);
   }
 
+  // Asks the local server whether a model accepts images. null = unknown.
+  async function detectVision(provider, model) {
+    const base = normalizeBase(provider.baseUrl);
+    try {
+      if (provider.protocol === "ollama") {
+        const res = await fetchWithTimeout(
+          `${base}/api/show`,
+          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model }) },
+          4000,
+        );
+        if (!res.ok) return null;
+        const { capabilities } = await res.json();
+        return Array.isArray(capabilities) ? capabilities.includes("vision") : null;
+      }
+      if (provider.id === "lmstudio") {
+        const res = await fetchWithTimeout(`${new URL(base).origin}/api/v0/models`, {}, 4000);
+        if (!res.ok) return null;
+        const { data } = await res.json();
+        const entry = (data || []).find((item) => item.id === model);
+        return entry ? entry.type === "vlm" : null;
+      }
+    } catch {
+      /* server unreachable or older version — fall back to name matching */
+    }
+    return null;
+  }
+
   async function probeLocal(preset) {
     const started = performance.now();
     try {
@@ -266,6 +293,7 @@ export {
   pickSmartModel,
   rankModels,
   listModels,
+  detectVision,
   detectLocal,
   modelCapabilities,
   userMessageWithAttachments,

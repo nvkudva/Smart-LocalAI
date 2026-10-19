@@ -7,7 +7,7 @@ import {
   isNanoEnabled,
   resolveActive,
 } from "../shared/extensionState.js";
-import { detectLocal, listModels, nanoAvailability, nanoLanguageOptions, normalizeBase, pickSmartModel } from "./providers.js";
+import { detectLocal, detectVision, listModels, nanoAvailability, nanoLanguageOptions, normalizeBase, pickSmartModel } from "./providers.js";
 
 export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
   const [endpoint, setEndpoint] = useState(() => createDefaultEndpoint());
@@ -16,6 +16,7 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
   const [providerSummary, setProviderSummary] = useState("Detecting local models…");
   const [endpointError, setEndpointError] = useState("");
   const [endpointLoading, setEndpointLoading] = useState(false);
+  const [detectedVision, setDetectedVision] = useState({});
   const endpointRef = useRef(endpoint);
   const endpointTimerRef = useRef(null);
   endpointRef.current = endpoint;
@@ -26,12 +27,33 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
     [detection, endpoint, nanoEnabled],
   );
   const activeProvider = useMemo(() => buildProvider(endpoint, nanoStatus), [endpoint, nanoStatus]);
+  const resolvedActive = useMemo(
+    () => resolveActive(endpoint, nanoStatus, settings, detection),
+    [detection, endpoint, nanoStatus, settings],
+  );
+  const visionKey = resolvedActive ? `${resolvedActive.provider.id}:${resolvedActive.model}` : "";
+  const isVisionDetected = detectedVision[visionKey] === true;
   const active = useMemo(() => {
-    const resolved = resolveActive(endpoint, nanoStatus, settings, detection);
-    return resolved
-      ? { ...resolved, explicit: Boolean(endpoint.model) && !nanoEnabled, visionOverride: endpoint.visionOverride || [] }
-      : null;
-  }, [detection, endpoint, nanoEnabled, nanoStatus, settings]);
+    if (!resolvedActive) return null;
+    const markedVision = endpoint.visionOverride || [];
+    return {
+      ...resolvedActive,
+      explicit: Boolean(endpoint.model) && !nanoEnabled,
+      visionOverride: isVisionDetected ? [...markedVision, resolvedActive.model] : markedVision,
+    };
+  }, [endpoint.model, endpoint.visionOverride, isVisionDetected, nanoEnabled, resolvedActive]);
+
+  useEffect(() => {
+    if (!resolvedActive || visionKey in detectedVision) return;
+    let isCancelled = false;
+    detectVision(resolvedActive.provider, resolvedActive.model).then((isVision) => {
+      if (isCancelled || isVision === null) return;
+      setDetectedVision((current) => ({ ...current, [visionKey]: isVision }));
+    });
+    return () => {
+      isCancelled = true;
+    };
+  }, [detectedVision, resolvedActive, visionKey]);
 
   const detectProviders = useCallback(async () => {
     setProviderSummary("Detecting local models…");
@@ -184,6 +206,7 @@ export function useEndpoint({ loaded, settings, onStatus, closeMenu }) {
     availableModels,
     activeProvider,
     active,
+    isVisionDetected,
     refreshModels,
     updateEndpoint,
     changeEndpointType,
