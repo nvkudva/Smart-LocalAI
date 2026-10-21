@@ -1,9 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Smart LocalAI — Chat & Page Agent",
-  "short_name": "Smart LocalAI",
+  "short_name": "SmartLocalAI",
   "version": "1.0.0",
-  "description": "Chat in a Gemini-style sidebar and control the current page (style, content, scripts) with LM Studio, Ollama, or any LLM endpoint.",
+  "homepage_url": "https://nvkudva.github.io/Smart-LocalAI/",
+  "support_url": "https://github.com/nvkudva/Smart-LocalAI/issues",
+  "bugs": "https://github.com/nvkudva/Smart-LocalAI/issues",
+  "description": "Chat in a Gemini-style sidebar and restyle the page you are on with Chrome's built-in AI, LM Studio, Ollama, or any LLM endpoint.",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "assets/icon16.png",
@@ -33,6 +36,14 @@
       "description": "Open Smart LocalAI"
     }
   },
-  "permissions": ["sidePanel", "storage", "scripting", "activeTab", "tabs", "contextMenus"],
-  "host_permissions": ["<all_urls>"]
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "scripting",
+    "tabs",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
 }

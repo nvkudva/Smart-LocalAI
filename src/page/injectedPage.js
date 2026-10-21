@@ -63,10 +63,6 @@ export function executeInPage(action) {
       window.__freeAiUndo.push({ kind: "css", before });
       return { ok: true, message: `CSS applied (${(action.css || "").length} chars)` };
     }
-    if (kind === "apply_js") {
-      const result = new Function(action.js || "")();
-      return { ok: true, message: `JS ran${result !== undefined ? `: ${String(result).slice(0, 300)}` : ""}` };
-    }
     if (kind === "edit_text" || kind === "set_html") {
       const el = find(action.selector);
       if (!el) return { ok: false, message: `Selector not found: ${action.selector}` };

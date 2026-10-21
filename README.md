@@ -2,7 +2,9 @@
 
 # Smart LocalAI
 
-Chrome Sidebar extension — chat & page agent like Claude for Chrome / Google Ask Gemini. Chat in the sidebar, and let the model edit the current page (style, content, scripts) with LM Studio, Ollama, or any LLM endpoint. The sidebar UI is built with React and Vite.
+Chrome Sidebar extension — chat & page agent like Claude for Chrome / Google Ask Gemini. Chat in the sidebar, and let the model restyle or edit the current page with Chrome's built-in AI, LM Studio, Ollama, or any LLM endpoint. The sidebar UI is built with React and Vite.
+
+**Website:** https://nvkudva.github.io/Smart-LocalAI/ · **Privacy policy:** [PRIVACY.md](PRIVACY.md) (published at https://nvkudva.github.io/Smart-LocalAI/privacy.html)
 
 ## Build and load unpacked
 
@@ -12,6 +14,8 @@ Chrome Sidebar extension — chat & page agent like Claude for Chrome / Google A
 4. Click the toolbar icon (or `Ctrl/Cmd+Shift+Y`) on any page.
 
 For development, run `bun run dev`, then rebuild before reloading the unpacked extension. Run `bun test` for the regression suite and `bun run lint` for the linter.
+
+To produce the uploadable package, run `bun run package` — it builds `dist/` and zips it as `smart-localai-<version>.zip`.
 
 ## Screenshots
 
@@ -29,7 +33,7 @@ For development, run `bun run dev`, then rebuild before reloading the unpacked e
 
 - Mode **Agent** (default): say `make headings blue`, `hide the cookie banner`, `change the CTA text to Buy now`. The model emits action blocks; each shows as a card with payload.
 - **Safe mode** (default on): mutating actions need **Apply**. Turn off in Settings for auto-apply. Read-only actions run free.
-- Actions: `apply_css`, `apply_js`, `edit_text`, `set_html`, `click`, `fill`, `remove`, `highlight`, `scroll`.
+- Actions: `apply_css`, `edit_text`, `set_html`, `click`, `fill`, `remove`, `highlight`, `scroll`.
 - **◎ Pick** — click any element on the page to target it. **↩ Undo** rolls back edits (stack kept in page). **Page ✓** toggles whether page text/DOM outline is sent as context.
 - Suggestion chips: Summarize, Dark mode, Readability, Extract data, Remove distractions.
 - Right-click: *Ask Smart LocalAI* on selected text, *Summarize this page* on any page.
@@ -60,5 +64,6 @@ For development, run `bun run dev`, then rebuild before reloading the unpacked e
 | [src/shared](src/shared) | Constants, storage, header, icons, styles, endpoint state |
 | [public/manifest.json](public/manifest.json) | MV3 manifest copied into `dist` |
 | [public/background.js](public/background.js) | Opens panel, context menus and pending prompts |
+| [docs](docs) | GitHub Pages site (landing page + privacy policy) |
 
 See [PLAN.md](PLAN.md) for architecture and rejected alternatives.

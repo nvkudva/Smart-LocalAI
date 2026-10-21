@@ -23,7 +23,7 @@ Chat in sidebar + agent controls live page (style, content, script) via any LLM.
 
 ## Page agent protocol
 - LLM never gets raw eval access silently. It emits fenced `agent` JSON blocks:
-  `{"action":"apply_css|apply_js|edit_text|set_html|click|fill|scroll|highlight|remove|get_snapshot","selector":"...","value":"...","css":"...","js":"..."}`
+  `{"action":"apply_css|edit_text|set_html|click|fill|scroll|highlight|remove|get_snapshot","selector":"...","value":"...","css":"..."}`
 - Panel parses blocks, shows action card (what + target + payload).
 - Safe mode (default): user approves each mutating action. Auto-apply toggle for power users. Read-only actions run free.
 - Executor runs in page via `chrome.scripting.executeScript`. Every mutation pushes inverse onto `window.__freeAiUndo` + panel undo stack. Undo button restores.
@@ -38,7 +38,7 @@ Chat in sidebar + agent controls live page (style, content, script) via any LLM.
 
 ## Safety / limits
 - Blocked on `chrome://`, Web Store, extension pages (no scripting) — panel says so, chat still works.
-- `apply_js` gated behind approval always in Safe mode; payload shown verbatim.
+- Every mutating action is gated behind approval in Safe mode; the payload is shown verbatim.
 - Max 5 agent loop iterations per turn. Actions truncated in card, full in title attr.
 
 ## Rejected alternatives

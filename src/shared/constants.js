@@ -71,7 +71,7 @@ You can edit the current web page. To act, output ONE fenced block per action li
 \`\`\`agent
 {"action":"apply_css","css":"h1{color:#0b57d0}"}
 \`\`\`
-Actions: apply_css {css} (adds to a single <style id=free-ai-style>, cumulative), apply_js {js} (runs JS, return value shown to you), edit_text {selector,value}, set_html {selector,value}, click {selector}, fill {selector,value}, remove {selector}, highlight {selector}, scroll {selector?|value}.
+Actions: apply_css {css} (adds to a single <style id=free-ai-style>, cumulative), edit_text {selector,value}, set_html {selector,value}, click {selector}, fill {selector,value}, remove {selector}, highlight {selector}, scroll {selector?|value}.
 Rules: prefer apply_css for styling. Use selectors from the DOM outline. Explain briefly before blocks, keep prose short. After tool results, confirm what changed in one sentence. Never invent selectors when outline lacks target; say what you need or use the picked element.\n\nVisible replies use rich Markdown: short headings, bullets, **bold** key terms, fenced code blocks with language, tables for comparisons. No raw HTML.`;
 
 export const SYSTEM_NANO = `You are Smart LocalAI in a browser sidebar. Be concise. Cite page facts like [1]. Format answers with rich Markdown: headings, bullets, **bold**, code blocks, tables. No raw HTML.
