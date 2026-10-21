@@ -46,6 +46,7 @@ To produce the uploadable package, run `bun run package` — it builds `dist/` a
 - **Prompt library** — type `/` for built-ins plus your own saved prompts with `{selection}` and `{page}` placeholders.
 - **Threads** — searchable history, per-chat export to Markdown/CSV, one-click clear (with confirm).
 - **Auto Summary** — optional 3-line summary the moment a new page opens.
+- **Idle reset** — a panel left open for 10 idle minutes starts a new chat; the old one stays in history.
 - **Permissions** — the extension asks for `<all_urls>` only so local endpoints (LM Studio/Ollama on localhost) and page injection work everywhere; keys never leave your machine except to the endpoint you chose.
 
 ## Project layout

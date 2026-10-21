@@ -11,6 +11,7 @@ import { useThreads } from "../threads/useThreads.js";
 import { TEXT_ACCEPT, useAttachments } from "../chat/useAttachments.js";
 
 const DOCKED_HISTORY_QUERY = "(min-width: 560px)";
+const IDLE_NEW_CHAT_MS = 10 * 60 * 1000;
 const SettingsDrawer = lazy(() => import("../settings/settingsDrawer.jsx"));
 import { DEFAULT_SETTINGS } from "../shared/constants.js";
 import { loadPersistedState, savePersistedState } from "../shared/storage.js";
@@ -97,6 +98,17 @@ export default function App() {
       setIsSlashMenu(false);
     }
   }, [isHistoryOpen, settingsOpen]);
+
+  // A panel left open for 10 idle minutes starts a fresh chat; the old one is
+  // kept in history. Activity (a new message, typing) resets the clock.
+  useEffect(() => {
+    if (!loaded || chat.busy || !messages.length) return undefined;
+    const timer = window.setTimeout(() => {
+      th.startNewThread();
+      setStatus("Idle for 10 minutes — started a new chat. The old one is in history.");
+    }, IDLE_NEW_CHAT_MS);
+    return () => window.clearTimeout(timer);
+  }, [chat.busy, input, loaded, messages, th.startNewThread]);
 
   useEffect(() => {
     if (!openMenu) return undefined;

@@ -213,6 +213,35 @@
         color: var(--muted);
         font-size: 19px;
       }
+      .lede-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        max-width: 900px;
+        margin: 34px auto 0;
+        text-align: left;
+      }
+      .lede-item {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 14px;
+        padding: 18px 20px;
+      }
+      .lede-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--blue);
+        margin-bottom: 7px;
+      }
+      .lede-text {
+        display: block;
+        color: var(--muted);
+        font-size: 15.5px;
+        line-height: 1.5;
+      }
       .cta-row {
         display: flex;
         gap: 12px;
@@ -603,7 +632,8 @@
         .privacy,
         .install,
         .g2,
-        .gallery {
+        .gallery,
+        .lede-list {
           grid-template-columns: 1fr;
         }
         .nav-links {
@@ -649,12 +679,28 @@
       <div class="wrap">
         <section class="hero">
           <span class="pill"><span class="dot"></span> Free · source on GitHub · no account</span>
-          <h1>Your AI, in the sidebar — <span class="grad">on your machine.</span></h1>
-          <p class="lede">
-            Smart LocalAI talks to Chrome's built-in Gemini&nbsp;Nano, LM&nbsp;Studio or Ollama
-            beside the page you're reading. Ask it a question, or tell it to restyle the page —
-            every edit arrives as a card you approve.
-          </p>
+          <h1>Sidebar for your <span class="grad">Local AI Assistant</span></h1>
+          <div class="lede-list">
+            <div class="lede-item">
+              <span class="lede-label">Local models</span>
+              <span class="lede-text"
+                >Chrome's built-in Gemini&nbsp;Nano, LM&nbsp;Studio or Ollama. No key, no
+                cloud.</span
+              >
+            </div>
+            <div class="lede-item">
+              <span class="lede-label">Page agent</span>
+              <span class="lede-text"
+                >Tell it to restyle the page. Every edit arrives as a card you approve.</span
+              >
+            </div>
+            <div class="lede-item">
+              <span class="lede-label">Extract data</span>
+              <span class="lede-text"
+                >One ask and the page comes back as a clean table you can copy.</span
+              >
+            </div>
+          </div>
           <div class="cta-row">
             <a class="btn btn-primary btn-lg" data-store href="#install">Add to Chrome</a>
             <a class="btn btn-ghost btn-lg" href="https://github.com/nvkudva/Smart-LocalAI"
