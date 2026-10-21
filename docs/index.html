@@ -269,7 +269,9 @@
         box-shadow: 0 50px 120px rgba(0, 0, 0, 0.6);
         background: #fff;
       }
-      .shot img {
+      .shot img,
+      .shot video {
+        display: block;
         width: 100%;
       }
       .shot::after {
@@ -712,7 +714,15 @@
             <span>·</span> Nothing leaves your browser
           </p>
           <figure class="shot reveal">
-            <img src="images/hero.png" alt="Smart LocalAI open beside a pricing page, with the extension's suggestion chips in the side panel" />
+            <video
+              controls
+              muted
+              playsinline
+              preload="metadata"
+              poster="images/demo-poster.jpg"
+              src="media/demo.mp4"
+              aria-label="Smart LocalAI demo: open the sidebar, pick a local model, summarize, restyle and extract data from a page"
+            ></video>
           </figure>
         </section>
 
@@ -901,11 +911,11 @@
           </div>
           <div class="gallery">
             <figure class="reveal">
-              <img src="images/panel.png" alt="The Smart LocalAI side panel with its suggestion chips" />
+              <img src="images/panel.png" alt="The Smart LocalAI side panel open beside an article, showing its suggestion chips" />
               <figcaption>One click from the toolbar — the panel opens beside the page.</figcaption>
             </figure>
             <figure class="reveal">
-              <img src="images/approve.png" alt="A page action card with CSS payload and Apply button" />
+              <img src="images/approve.png" alt="An article restyled to dark mode after approving a CSS action card in the side panel" />
               <figcaption>Edits arrive as cards with the exact payload. Nothing runs silently.</figcaption>
             </figure>
             <figure class="reveal">
@@ -913,8 +923,8 @@
               <figcaption>Local models are detected automatically; cloud ones need your key.</figcaption>
             </figure>
             <figure class="reveal">
-              <img src="images/table.png" alt="Pricing table extracted from a page into the chat" />
-              <figcaption>“Extract the pricing table” — one ask, clean Markdown.</figcaption>
+              <img src="images/table.png" alt="A laptop comparison table extracted from the page into the chat" />
+              <figcaption>“Extract the laptop comparison” — one ask, clean Markdown.</figcaption>
             </figure>
           </div>
         </section>
