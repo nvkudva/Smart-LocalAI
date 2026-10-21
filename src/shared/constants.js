@@ -1,5 +1,5 @@
 export const DEFAULT_SETTINGS = {
-  safeMode: false,
+  safeMode: true,
   includePage: true,
   smartModel: true,
   autoTldr: false,

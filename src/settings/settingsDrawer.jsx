@@ -139,7 +139,7 @@ export default function SettingsDrawer({
             </Field>
             <div className="row model-row">
               <Field
-                hint={availableModels.length ? `${availableModels.length} models` : null}
+                hint={availableModels.length ? `${availableModels.length} model${availableModels.length === 1 ? "" : "s"}` : null}
                 htmlFor="epModel"
                 label="Model"
               >

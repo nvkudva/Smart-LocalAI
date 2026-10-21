@@ -96,12 +96,41 @@ function Meta({ message, index, onFork, children }) {
   );
 }
 
-export const Message = memo(function Message({ message, chunks, index, isThinkingHidden, onCitation, onFork }) {
+export const Message = memo(function Message({
+  message,
+  chunks,
+  index,
+  isThinkingHidden,
+  onCitation,
+  onFork,
+  onEdit,
+  onRetry,
+  canRetry,
+}) {
   if (message.role === "user") {
     return (
       <div className="msg user">
         <div className="bubble">{String(message.content ?? "")}</div>
-        <Meta index={index} message={message} onFork={onFork} />
+        <Meta index={index} message={message} onFork={onFork}>
+          <button
+            aria-label="Copy message"
+            className="mini-btn mini-icon"
+            onClick={(event) => copyText(event, message.content)}
+            title="Copy message"
+            type="button"
+          >
+            <Icons.Copy size={13} />
+          </button>
+          <button
+            aria-label="Edit and resend message"
+            className="mini-btn mini-icon"
+            onClick={() => onEdit?.(index)}
+            title="Edit and resend"
+            type="button"
+          >
+            <Icons.Edit size={13} />
+          </button>
+        </Meta>
       </div>
     );
   }
@@ -121,7 +150,7 @@ export const Message = memo(function Message({ message, chunks, index, isThinkin
       {hasReasoning && <ThinkingBlock isThinking={isThinking} text={reasoning} />}
       {(!isWaitingOnAnswer || isThinkingHidden) && (
         <div className="body">
-          <Markdown chunks={chunks} onCitation={onCitation} text={visibleText} />
+          <Markdown chunks={chunks} onCitation={(citationIndex) => onCitation?.(citationIndex, chunks)} text={visibleText} />
         </div>
       )}
       {!message.streaming && (
@@ -136,6 +165,17 @@ export const Message = memo(function Message({ message, chunks, index, isThinkin
           >
             <Icons.Copy size={13} />
           </button>
+          {canRetry && (
+            <button
+              aria-label="Regenerate answer"
+              className="mini-btn mini-icon"
+              onClick={onRetry}
+              title="Regenerate answer"
+              type="button"
+            >
+              <Icons.Refresh size={13} />
+            </button>
+          )}
         </Meta>
       )}
     </div>

@@ -23,11 +23,12 @@ export default function ModelMenu({
   const smartModel = models.length ? pickSmartModel(models) : "";
 
   return (
-    <div className="menu menu-up model-menu model-effort-card">
+    <div aria-label="Model and effort" className="menu menu-up model-menu model-effort-card" role="menu">
       <div className="model-segment">
         <button
           className={`menu-provider ${!active?.explicit ? "active" : ""}`}
           onClick={onSelectAuto}
+          role="menuitem"
           type="button"
         >
           <span className="p-name">
@@ -57,6 +58,7 @@ export default function ModelMenu({
                       className={`menu-item ${selected ? "active" : ""}`}
                       key={entry.name}
                       onClick={() => onSelectModel(entry.name)}
+                      role="menuitem"
                       type="button"
                     >
                       <span>{entry.name}</span>
@@ -71,7 +73,7 @@ export default function ModelMenu({
               </div>
             </div>
             {ranked.length > PREVIEW_COUNT && (
-              <button className="menu-more" onClick={onToggleExpanded} type="button">
+              <button className="menu-more" onClick={onToggleExpanded} role="menuitem" type="button">
                 {expanded ? "Show less" : `+${ranked.length - PREVIEW_COUNT} more`}
               </button>
             )}

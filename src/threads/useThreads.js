@@ -58,6 +58,15 @@ export function useThreads({ onResetChat, onStatus }) {
     [activeThreadId, messages, onResetChat, onStatus],
   );
 
+  const editFromMessage = useCallback(
+    (index) => {
+      setMessages((current) => current.slice(0, index));
+      onResetChat();
+      onStatus("Editing message — resend when ready.");
+    },
+    [onResetChat, onStatus],
+  );
+
   const clearAllThreads = useCallback(() => {
     if (!window.confirm("Clear all chat history? This can't be undone.")) return;
     setThreads([]);
@@ -99,6 +108,7 @@ export function useThreads({ onResetChat, onStatus }) {
     startNewThread,
     openThread,
     deleteThread,
+    editFromMessage,
     clearAllThreads,
     exportThread,
     forkThreadAt,

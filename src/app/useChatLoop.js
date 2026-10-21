@@ -116,8 +116,8 @@ export function useChatLoop({
   );
 
   const handleCitation = useCallback(
-    async (index) => {
-      const text = chunks[index - 1];
+    async (index, sourceChunks) => {
+      const text = (sourceChunks || chunks)[index - 1];
       if (!text || !page.tabId) return;
       onStatus(`Scrolling to citation [${index}]…`);
       try {
@@ -131,8 +131,9 @@ export function useChatLoop({
   );
 
   const sendText = useCallback(
-    async (rawText, mode) => {
+    async (rawText, mode, options = {}) => {
       const text = String(rawText || "").trim();
+      const isRetry = Array.isArray(options.retryHistory);
       if ((!text && !attachments.length) || busy) return;
       if (!active?.model) {
         setNotice({
@@ -147,6 +148,7 @@ export function useChatLoop({
       }
 
       if (
+        !isRetry &&
         attachments.some((file) => file.kind === "image") &&
         !modelCapabilities(active.model, active.provider.protocol, active.visionOverride).vision
       ) {
@@ -155,7 +157,7 @@ export function useChatLoop({
       }
       let outgoing = null;
       let suffix = "";
-      if (attachments.length) {
+      if (!isRetry && attachments.length) {
         const built = userMessageWithAttachments(text, attachments, active.provider.protocol);
         if (built.error) {
           onStatus(built.error);
@@ -167,15 +169,19 @@ export function useChatLoop({
       const snapshot = settings.includePage && page.attachPage ? await page.refreshPage() : page.snapshot;
       const context = buildPageContext(snapshot, active.provider, page.picked?.selector || "");
       setChunks(context.chunks);
+      const userMessage = isRetry
+        ? null
+        : { id: createThreadId(), role: "user", content: text + suffix, createdAt: Date.now() };
+      const requestHistory = isRetry ? options.retryHistory : [...messages, userMessage];
       if (!activeThreadId) threadsApi.setActiveThreadId(createThreadId());
-      const userMessage = { id: createThreadId(), role: "user", content: text + suffix, createdAt: Date.now() };
-      const requestHistory = [...messages, userMessage];
-      threadsApi.setMessages(requestHistory);
+      if (!isRetry) threadsApi.setMessages(requestHistory);
       setNotice(null);
       setActionCards([]);
       isDiscardingRef.current = false;
-      onClearInput();
-      setAttachments([]);
+      if (!isRetry) {
+        onClearInput();
+        setAttachments([]);
+      }
       setBusy(true);
       const abort = new AbortController();
       abortRef.current = abort;
@@ -314,6 +320,21 @@ export function useChatLoop({
   );
   sendTextRef.current = sendText;
 
+  const retryLast = useCallback(() => {
+    if (busy) return;
+    let lastUserIndex = -1;
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (messages[index].role === "user") {
+        lastUserIndex = index;
+        break;
+      }
+    }
+    if (lastUserIndex < 0) return;
+    const history = messages.slice(0, lastUserIndex + 1);
+    threadsApi.setMessages(history);
+    sendText(history[lastUserIndex].content, undefined, { retryHistory: history });
+  }, [busy, messages, sendText, threadsApi]);
+
   useEffect(() => {
     if (!loaded) return undefined;
     const runPendingPrompt = () =>
@@ -341,6 +362,7 @@ export function useChatLoop({
     notice,
     resetChat,
     resolveAction,
+    retryLast,
     sendText,
     stopStream: () => {
       abortRef.current?.abort();
