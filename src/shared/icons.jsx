@@ -16,6 +16,28 @@ function Base({ size = 18, filled = false, children }) {
   );
 }
 
+export function Logo({ size = 22 }) {
+  return (
+    <svg aria-hidden="true" height={size} viewBox="0 0 64 64" width={size}>
+      <defs>
+        <linearGradient id="logo-tile" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#F4F8FF" />
+          <stop offset="1" stopColor="#D3E3FD" />
+        </linearGradient>
+      </defs>
+      <rect fill="url(#logo-tile)" height="64" rx="15" width="64" />
+      <rect fill="none" height="62" rx="14" stroke="#1B3260" strokeOpacity=".12" strokeWidth="2" width="62" x="1" y="1" />
+      <path
+        d="M28 10c.9 10.5 4.2 16.8 13.5 21C32.2 35.2 28.9 41.5 28 54 27.1 41.5 23.8 35.2 14.5 31 23.8 26.8 27.1 20.5 28 10z"
+        fill="#1B3260"
+      />
+      <path
+        d="M47 9c.8 5 3 7.6 8 8.5-5 .9-7.2 3.5-8 8.5-.8-5-3-7.6-8-8.5 5-.9 7.2-3.5 8-8.5z"
+        fill="#2563EB"
+      />
+    </svg>
+  );
+}
 export function Sparkle({ size }) {
   return (
     <Base filled size={size}>
@@ -36,6 +58,22 @@ export function Plus({ size }) {
   return (
     <Base size={size}>
       <path d="M12 5v14M5 12h14" />
+    </Base>
+  );
+}
+export function NewChat({ size }) {
+  return (
+    <Base size={size}>
+      <path d="M12 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5" />
+      <path d="M18.4 3.6a1.9 1.9 0 0 1 2.7 2.7L12 15.4l-3.6.9.9-3.6 9.1-9.1z" />
+    </Base>
+  );
+}
+export function Edit({ size }) {
+  return (
+    <Base size={size}>
+      <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z" />
+      <path d="m13.5 6.5 3 3" />
     </Base>
   );
 }
@@ -107,22 +145,6 @@ export function Stop({ size = 14 }) {
     </Base>
   );
 }
-export function Shield({ size }) {
-  return (
-    <Base size={size}>
-      <path d="M12 21.5s7.5-3.4 7.5-9.5V5.2L12 2.5 4.5 5.2V12c0 6.1 7.5 9.5 7.5 9.5z" />
-      <path d="m9 11.5 2.2 2.2L15.5 9.5" />
-    </Base>
-  );
-}
-export function ShieldOff({ size }) {
-  return (
-    <Base size={size}>
-      <path d="M12 21.5s7.5-3.4 7.5-9.5V5.2L12 2.5 4.5 5.2V12c0 6.1 7.5 9.5 7.5 9.5z" />
-      <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
-    </Base>
-  );
-}
 export function Image({ size }) {
   return (
     <Base size={size}>
@@ -141,11 +163,54 @@ export function Doc({ size }) {
     </Base>
   );
 }
-export function Inspect({ size }) {
+export function Target({ size }) {
   return (
     <Base size={size}>
-      <rect height="11" rx="1.5" strokeDasharray="3 2" width="12" x="9" y="7" />
-      <path d="M2.5 2.5 10 15l-2.4-.7-1.4 2.7-1.7-1L5.7 13 2.5 12z" />
+      <circle cx="12" cy="12" r="3.4" />
+      <circle cx="12" cy="12" r="8" strokeDasharray="3 3" />
+      <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
+    </Base>
+  );
+}
+export function Notes({ size }) {
+  return (
+    <Base filled size={size}>
+      <rect height="2.3" rx="1.15" width="18" x="3" y="4.6" />
+      <rect height="2.3" rx="1.15" width="18" x="3" y="9.7" />
+      <rect height="2.3" rx="1.15" width="11" x="3" y="14.8" />
+    </Base>
+  );
+}
+export function TypeScale({ size }) {
+  return (
+    <Base size={size}>
+      <path d="M3 19.5 7.2 7l4.2 12.5M4.6 15.3h5.2" />
+      <path d="M17.6 19.5V9.6M15.3 12.1l2.3-2.5 2.3 2.5" />
+    </Base>
+  );
+}
+export function Table({ size }) {
+  return (
+    <Base size={size}>
+      <rect height="15" rx="2.5" width="18" x="3" y="4.5" />
+      <path d="M3 9.5h18M9.6 9.5v10M15 9.5v10" />
+    </Base>
+  );
+}
+export function EyeOff({ size }) {
+  return (
+    <Base size={size}>
+      <path d="M3.5 3.5l17 17" />
+      <path d="M10.4 6.2A9.6 9.6 0 0 1 12 6.1c5 0 8.4 5.9 8.4 5.9a15.6 15.6 0 0 1-3.2 3.6M6.5 7.9A15.4 15.4 0 0 0 3.6 12s3.4 5.9 8.4 5.9c1.2 0 2.3-.3 3.3-.8" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </Base>
+  );
+}
+export function Search({ size }) {
+  return (
+    <Base size={size}>
+      <circle cx="10.8" cy="10.8" r="6.5" />
+      <path d="m15.6 15.6 4.6 4.6" />
     </Base>
   );
 }
@@ -165,10 +230,35 @@ export function Globe({ size }) {
     </Base>
   );
 }
+export function Copy({ size = 14 }) {
+  return (
+    <Base size={size}>
+      <rect height="12" rx="2" width="12" x="9" y="9" />
+      <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+    </Base>
+  );
+}
+export function Branch({ size = 14 }) {
+  return (
+    <Base size={size}>
+      <circle cx="6" cy="6" r="2.5" />
+      <circle cx="6" cy="18" r="2.5" />
+      <circle cx="18" cy="12" r="2.5" />
+      <path d="M6 8.5v7M8 6h3a4 4 0 0 1 4 4v.5" />
+    </Base>
+  );
+}
 export function Trash({ size = 15 }) {
   return (
     <Base size={size}>
       <path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5M14 11v5" />
+    </Base>
+  );
+}
+export function Refresh({ size = 15 }) {
+  return (
+    <Base size={size}>
+      <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" />
     </Base>
   );
 }

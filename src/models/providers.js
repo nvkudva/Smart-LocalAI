@@ -1,10 +1,5 @@
 // Provider registry, auto-detection, smart model scoring, streaming chat.
 
-const PRESETS = [
-    { id: "lmstudio", name: "LM Studio", protocol: "openai", baseUrl: "http://localhost:1234/v1", local: true, auth: "none" },
-    { id: "ollama", name: "Ollama", protocol: "ollama", baseUrl: "http://localhost:11434", local: true, auth: "none" }
-  ];
-
   // Single endpoint card: preset (prefilled URL, still editable) or custom.
   const PROVIDER_TYPES = {
     lmstudio: { name: "LM Studio", protocol: "openai", baseUrl: "http://localhost:1234/v1", auth: "none", local: true },
@@ -37,10 +32,11 @@ const PRESETS = [
     if (provider.auth === "x-api-key") {
       headers["x-api-key"] = key;
       headers["anthropic-version"] = "2023-06-01";
+      headers["anthropic-dangerous-direct-browser-access"] = "true";
     } else if (provider.auth === "custom" && provider.authHeader) {
       headers[provider.authHeader] = key;
     } else if (provider.auth !== "none" && provider.auth !== "query") {
-      headers.Authorization = "Bearer " + key;
+      headers.Authorization = `Bearer ${key}`;
     }
     return headers;
   }
@@ -78,18 +74,32 @@ const PRESETS = [
 
   // Attachment support per model. Text files are inlined as text everywhere;
   // images need a vision-capable model, PDFs need a native document API.
-  function modelCapabilities(modelName, protocol) {
+  // visionOverride: model names the user marked as vision-capable (custom local
+  // names like "ornith" can't be detected). Case-insensitive exact match.
+  function modelCapabilities(modelName, protocol, visionOverride) {
     const name = String(modelName || "").toLowerCase();
     const p = protocol || "openai";
+    const forced = Array.isArray(visionOverride) && visionOverride.some((marked) => String(marked).toLowerCase() === name);
     if (p === "anthropic" || p === "gemini") return { vision: true, pdf: true };
     if (p === "nano") return { vision: false, pdf: false };
     if (p === "ollama") {
       return {
-        vision: /(llava|moondream|minicpm-v|bakllava|vision|-vl\b|vl-|qwen.*vl|gemma-?3|llama-?3\.2)/.test(name),
+        vision:
+          forced ||
+          /(llava|moondream|minicpm-v|bakllava|pixtral|janus|internvl|cogvlm|vision|-vl\b|vl-|qwen.*vl|gemma-?3|llama-?3\.2)/.test(
+            name,
+          ),
         pdf: false,
       };
     }
-    return { vision: /(gpt-4o|gpt-5|o1|o3|o4|vision|computer-use)/.test(name), pdf: false };
+    return {
+      vision:
+        forced ||
+        /(gpt-4o|gpt-5|o1|o3|o4|vlm|llava|moondream|minicpm|pixtral|janus|internvl|cogvlm|qwen.*vl|vision|computer-use)/.test(
+          name,
+        ),
+      pdf: false,
+    };
   }
 
   function dataUrlParts(dataUrl) {
@@ -196,15 +206,15 @@ const PRESETS = [
       return [NANO_MODEL];
     }
     if (provider.protocol === "ollama") {
-      const res = await fetchWithTimeout(base + "/api/tags", {}, 4000);
-      if (!res.ok) throw new Error("Ollama " + res.status);
+      const res = await fetchWithTimeout(`${base}/api/tags`, {}, 4000);
+      if (!res.ok) throw new Error(`Ollama ${res.status}`);
       const data = await res.json();
       return (data.models || []).map((m) => m.name).filter(Boolean);
     }
     if (provider.protocol === "anthropic") {
       // Anthropic has no public list for all keys; return known-good defaults merged with API if available.
       try {
-        const res = await fetchWithTimeout(base + "/v1/models", { headers: authHeaders(provider) }, 4000);
+        const res = await fetchWithTimeout(`${base}/v1/models`, { headers: authHeaders(provider) }, 4000);
         if (res.ok) {
           const data = await res.json();
           const names = (data.data || []).map((m) => m.id).filter(Boolean);
@@ -215,15 +225,46 @@ const PRESETS = [
     }
     if (provider.protocol === "gemini") {
       const key = encodeURIComponent((provider.apiKey || "").trim());
-      const res = await fetchWithTimeout(base + "/models?key=" + key, {}, 4000);
-      if (!res.ok) throw new Error("Gemini " + res.status);
+      const res = await fetchWithTimeout(`${base}/models?key=${key}`, {}, 4000);
+      if (!res.ok) throw new Error(`Gemini ${res.status}`);
       const data = await res.json();
       return (data.models || []).map((m) => String(m.name || "").replace("models/", "")).filter((n) => n.includes("gemini"));
     }
-    const res = await fetchWithTimeout(base + "/models", { headers: authHeaders(provider) }, 5000);
-    if (!res.ok) throw new Error("Models " + res.status);
+    const res = await fetchWithTimeout(`${base}/models`, { headers: authHeaders(provider) }, 5000);
+    if (!res.ok) throw new Error(`Models ${res.status}`);
     const data = await res.json();
     return (data.data || []).map((m) => m.id).filter(Boolean);
+  }
+
+  // Asks the local server whether a model accepts images. null = unknown.
+  function modelLabel(provider, model) {
+    return `${provider.name} · ${model}`;
+  }
+
+  async function detectVision(provider, model) {
+    const base = normalizeBase(provider.baseUrl);
+    try {
+      if (provider.protocol === "ollama") {
+        const res = await fetchWithTimeout(
+          `${base}/api/show`,
+          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model }) },
+          4000,
+        );
+        if (!res.ok) return null;
+        const { capabilities } = await res.json();
+        return Array.isArray(capabilities) ? capabilities.includes("vision") : null;
+      }
+      if (provider.id === "lmstudio") {
+        const res = await fetchWithTimeout(`${new URL(base).origin}/api/v0/models`, {}, 4000);
+        if (!res.ok) return null;
+        const { data } = await res.json();
+        const entry = (data || []).find((item) => item.id === model);
+        return entry ? entry.type === "vlm" : null;
+      }
+    } catch {
+      /* server unreachable or older version — fall back to name matching */
+    }
+    return null;
   }
 
   async function probeLocal(preset) {
@@ -238,13 +279,14 @@ const PRESETS = [
   }
 
   async function detectLocal() {
-    const locals = PRESETS.filter((p) => p.local);
+    const locals = Object.entries(PROVIDER_TYPES)
+      .filter(([, type]) => type.local)
+      .map(([id, type]) => ({ id, ...type }));
     const results = await Promise.all(locals.map(async (preset) => ({ preset, ...(await probeLocal(preset)) })));
     return results;
   }
 
 export {
-  PRESETS,
   PROVIDER_TYPES,
   NANO_MODEL,
   nanoLanguageOptions,
@@ -255,8 +297,9 @@ export {
   pickSmartModel,
   rankModels,
   listModels,
+  modelLabel,
+  detectVision,
   detectLocal,
-  probeLocal,
   modelCapabilities,
   userMessageWithAttachments,
   authHeaders,

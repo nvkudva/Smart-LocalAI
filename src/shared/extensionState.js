@@ -11,6 +11,7 @@ export function createDefaultEndpoint(type = "lmstudio") {
     model: "",
     remembered: {},
     useNano: false,
+    visionOverride: [],
   };
 }
 
@@ -99,6 +100,29 @@ export function createThreadId() {
   return `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
+export function forkMessages(messages, index) {
+  return (messages || []).slice(0, index + 1);
+}
+
+export function tokensPerSecond(chars, ms) {
+  if (!chars || !ms || ms <= 0) return 0;
+  return Math.round(chars / 4 / (ms / 1000));
+}
+
+export function formatTime(stamp) {
+  if (!stamp) return "";
+  const date = new Date(stamp);
+  if (Number.isNaN(date.getTime())) return "";
+  const time = date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const today = new Date();
+  const sameDay = date.toDateString() === today.toDateString();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (sameDay) return time;
+  if (date.toDateString() === yesterday.toDateString()) return `Yesterday ${time}`;
+  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${time}`;
+}
+
 export function upsertThread(threads, threadId, messages) {
   if (!threadId || !messages.length) return threads;
   const record = {
@@ -142,7 +166,6 @@ export function stateForStorage({ endpoint, settings, threads, activeThreadId, m
   return {
     "freeai.endpoint": endpoint,
     "freeai.settings": settings,
-    "freeai.history": messages.slice(-40),
     "freeai.threads": upsertThread(threads, activeThreadId, messages).slice(0, 30),
     "freeai.activeThread": activeThreadId,
     "freeai.customPrompts": customPrompts.slice(0, 50),

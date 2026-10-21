@@ -32,7 +32,7 @@ export function useAttachments({ active, onStatus }) {
         onStatus("Pick a model first, then attach files.");
         return;
       }
-      const now = modelCapabilities(active.model, active.provider.protocol);
+      const now = modelCapabilities(active.model, active.provider.protocol, active.visionOverride);
       let count = attachments.length;
       for (const file of files) {
         if (count >= 5) {

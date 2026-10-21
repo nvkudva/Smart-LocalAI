@@ -3,16 +3,19 @@ import Composer from "../chat/composer.jsx";
 import { Header, SharingBar } from "../shared/header.jsx";
 import MessageList from "../chat/messageList.jsx";
 import ModelMenu from "../models/modelMenu.jsx";
+import HistoryPanel from "../chat/historyPanel.jsx";
 import PromptMenu from "../chat/promptMenu.jsx";
 import { useEndpoint } from "../models/useEndpoint.jsx";
 import { usePageContext } from "../page/usePageContext.js";
 import { useThreads } from "../threads/useThreads.js";
 import { TEXT_ACCEPT, useAttachments } from "../chat/useAttachments.js";
 
+const DOCKED_HISTORY_QUERY = "(min-width: 560px)";
 const SettingsDrawer = lazy(() => import("../settings/settingsDrawer.jsx"));
 import { DEFAULT_SETTINGS } from "../shared/constants.js";
 import { loadPersistedState, savePersistedState } from "../shared/storage.js";
 import { modelCapabilities } from "../models/providers.js";
+import { threadTitle } from "../shared/extensionState.js";
 import { useChatLoop } from "./useChatLoop.js";
 
 export default function App() {
@@ -20,18 +23,25 @@ export default function App() {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [customPrompts, setCustomPrompts] = useState([]);
   const [openMenu, setOpenMenu] = useState(null);
+  const [isSlashMenu, setIsSlashMenu] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
   const [modelExpanded, setModelExpanded] = useState(false);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("");
+  const [composerFocus, setComposerFocus] = useState(0);
   const attachRef = useRef(null);
   const chatLoopRef = useRef(null);
 
-  const closeMenu = useCallback(() => setOpenMenu(null), []);
+  const closeMenu = useCallback(() => {
+    setOpenMenu(null);
+    setIsSlashMenu(false);
+  }, []);
   const resetChatArtifacts = useCallback(() => {
     chatLoopRef.current?.resetChat();
     setOpenMenu(null);
+    setIsSlashMenu(false);
   }, []);
 
   const ep = useEndpoint({ loaded, settings, onStatus: setStatus, closeMenu });
@@ -46,7 +56,10 @@ export default function App() {
   });
 
   const caps = useMemo(
-    () => (active ? modelCapabilities(active.model, active.provider.protocol) : { vision: false, pdf: false }),
+    () =>
+      active
+        ? modelCapabilities(active.model, active.provider.protocol, active.visionOverride)
+        : { vision: false, pdf: false },
     [active],
   );
   const chat = useChatLoop({
@@ -67,6 +80,52 @@ export default function App() {
   useEffect(() => {
     chatLoopRef.current = chat;
   }, [chat]);
+
+  const promptHistory = useMemo(
+    () =>
+      messages
+        .filter((message) => message.role === "user")
+        .map((message) => String(message.content ?? ""))
+        .filter(Boolean),
+    [messages],
+  );
+  const activeTitle = messages.length ? threadTitle(messages) : "New chat";
+
+  useEffect(() => {
+    if (settingsOpen || isHistoryOpen) {
+      setOpenMenu(null);
+      setIsSlashMenu(false);
+    }
+  }, [isHistoryOpen, settingsOpen]);
+
+  useEffect(() => {
+    if (!openMenu) return undefined;
+    const handleMenuKey = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpenMenu(null);
+        setIsSlashMenu(false);
+        if (input.startsWith("/")) setInput("");
+        return;
+      }
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      const menu = document.querySelector(".menu-anchor");
+      if (!menu) return;
+      const items = Array.from(menu.querySelectorAll("button:not(:disabled)"));
+      if (!items.length) return;
+      event.preventDefault();
+      const currentIndex = items.indexOf(document.activeElement);
+      if (currentIndex < 0) {
+        items[event.key === "ArrowDown" ? 0 : items.length - 1].focus();
+        return;
+      }
+      const offset = event.key === "ArrowDown" ? 1 : -1;
+      items[(currentIndex + offset + items.length) % items.length].focus();
+    };
+    document.addEventListener("keydown", handleMenuKey, true);
+    return () => document.removeEventListener("keydown", handleMenuKey, true);
+  }, [input, openMenu]);
 
   useEffect(() => {
     document.body.dataset.theme = settings.theme || "light";
@@ -123,27 +182,54 @@ export default function App() {
     [page.snapshot],
   );
 
+  const closeHistory = useCallback(() => setIsHistoryOpen(false), []);
+  const closeHistoryWhenOverlay = () => {
+    if (!window.matchMedia(DOCKED_HISTORY_QUERY).matches) setIsHistoryOpen(false);
+  };
+
   const displayedMessages = chat.notice ? [...messages, chat.notice] : messages;
 
   return (
-    <>
+    <div className="shell">
+      {isHistoryOpen && (
+        <>
+          <HistoryPanel
+            activeThreadId={activeThreadId}
+            onClose={closeHistory}
+            onDelete={th.deleteThread}
+            onExport={th.exportThread}
+            onOpen={(threadId) => {
+              th.openThread(threadId);
+              closeHistoryWhenOverlay();
+            }}
+            onQueryChange={setHistoryQuery}
+            query={historyQuery}
+            threads={threads}
+          />
+          <button aria-label="Close history" className="history-scrim" onClick={closeHistory} type="button" />
+        </>
+      )}
+      <div className="chat-col">
       <Header
-        historyMenuProps={{
-          threads,
-          activeThreadId,
-          query: historyQuery,
-          onQueryChange: setHistoryQuery,
-          onOpen: th.openThread,
-          onDelete: th.deleteThread,
-          onExport: th.exportThread,
+        isHistoryOpen={isHistoryOpen}
+        onNewChat={() => {
+          setOpenMenu(null);
+          th.startNewThread();
+          closeHistoryWhenOverlay();
         }}
-        onNewChat={th.startNewThread}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onToggleMenu={(menu) => setOpenMenu((current) => (current === menu ? null : menu))}
-        onToggleTheme={() =>
-          setSettings((current) => ({ ...current, theme: current.theme === "dark" ? "light" : "dark" }))
-        }
-        openMenu={openMenu}
+        onOpenSettings={() => {
+          setOpenMenu(null);
+          setSettingsOpen(true);
+        }}
+        onToggleHistory={() => {
+          setOpenMenu(null);
+          setIsHistoryOpen((current) => !current);
+        }}
+        onToggleTheme={() => {
+          setOpenMenu(null);
+          setSettings((current) => ({ ...current, theme: current.theme === "dark" ? "light" : "dark" }));
+        }}
+        title={activeTitle}
       />
 
       <MessageList
@@ -152,8 +238,30 @@ export default function App() {
         messages={displayedMessages}
         onApplyAction={(id) => chat.resolveAction(id, true)}
         onCitation={chat.handleCitation}
+        onEdit={(index) => {
+          const target = messages[index];
+          if (!target) return;
+          th.editFromMessage(index);
+          setInput(String(target.content ?? ""));
+          setComposerFocus((current) => current + 1);
+        }}
+        onFork={(index) => th.forkThreadAt(index)}
+        onRetry={() => {
+          chat.retryLast();
+          setComposerFocus((current) => current + 1);
+        }}
         onSkipAction={(id) => chat.resolveAction(id, false)}
-        onSuggestion={(suggestion) => chat.sendText(suggestion.prompt, suggestion.mode)}
+        onSuggestion={(suggestion) => {
+          if (input.trim() || attachments.length) {
+            const hint = "You have a draft — send it or clear it before using a suggestion.";
+            setStatus(hint);
+            window.setTimeout(() => setStatus((current) => (current === hint ? "" : current)), 4000);
+            return;
+          }
+          chat.sendText(suggestion.prompt, suggestion.mode);
+          setComposerFocus((current) => current + 1);
+        }}
+        hiddenThinkingModels={settings.hideThinkingModels}
         providerStatus={ep.providerSummary}
         streamingMessage={chat.streamingMessage}
       />
@@ -177,16 +285,21 @@ export default function App() {
           />
         }
         onInputChange={(value) => {
-          if (value === "/") {
-            setOpenMenu("prompts");
-          }
+          if (value === "/") setOpenMenu("prompts");
+          if (openMenu === "model") setOpenMenu(null);
+          if (openMenu === "prompts" && !value.startsWith("/")) setOpenMenu(null);
           setInput(value);
+        }}
+        onComposerFocus={() => {
+          if (openMenu === "model") setOpenMenu(null);
         }}
         onStop={() => chat.stopStream()}
         onSubmit={() => chat.sendText(input)}
         onToggleMenu={(menu) => setOpenMenu((current) => (current === menu ? null : menu))}
         onToggleSafe={() => setSettings((current) => ({ ...current, safeMode: !current.safeMode }))}
+        focusToken={composerFocus}
         openMenu={openMenu}
+        promptHistory={promptHistory}
         promptMenu={
           <PromptMenu
             customPrompts={customPrompts}
@@ -194,6 +307,7 @@ export default function App() {
             canImage={caps.vision}
             canDoc={Boolean(active?.model)}
             docHint={caps.pdf ? "Text files and PDFs" : "Text files (PDFs need Claude / Gemini)"}
+            query={input.startsWith("/") ? input.slice(1) : ""}
             onAttachImage={() => {
               setOpenMenu(null);
               attachRef.current?.("image");
@@ -225,14 +339,20 @@ export default function App() {
         status={status}
       />
 
+      </div>
+
       {settingsOpen && (
         <Suspense fallback={null}>
         <SettingsDrawer
+          availableModels={ep.availableModels}
           customPrompts={customPrompts}
           endpoint={endpoint}
           endpointLoading={ep.endpointLoading}
+          isVisionDetected={ep.isVisionDetected}
           endpointStatus={ep.endpointStatus}
           nanoStatus={ep.nanoStatus}
+          onSelectAuto={ep.selectAutoModel}
+          onSelectModel={ep.selectModel}
           onAddPrompt={(prompt) =>
             setCustomPrompts((current) => (current.includes(prompt) ? current : [...current, prompt]))
           }
@@ -242,14 +362,13 @@ export default function App() {
           onDownloadNano={ep.downloadNano}
           onEndpointBlur={ep.commitEndpointField}
           onEndpointChange={ep.changeEndpointField}
-          onEndpointTypeChange={ep.changeEndpointType}
-          onNanoChange={(checked) => ep.updateEndpoint("useNano", checked)}
+          onModelProviderChange={ep.changeModelProvider}
           onRefreshModels={() => ep.refreshModels()}
           onSettingsChange={(field, value) => setSettings((current) => ({ ...current, [field]: value }))}
           settings={settings}
         />
         </Suspense>
       )}
-    </>
+    </div>
   );
 }

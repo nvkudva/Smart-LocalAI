@@ -1,6 +1,11 @@
 import { useCallback, useState } from "react";
-import { threadTitle, upsertThread } from "../shared/extensionState.js";
+import { createThreadId, forkMessages, threadTitle, upsertThread } from "../shared/extensionState.js";
+import { stripThinking } from "../models/thinking.js";
 import { downloadTextFile } from "../page/pageContext.js";
+
+function exportedContent(message) {
+  return message.role === "assistant" ? stripThinking(message.content) : String(message.content ?? "");
+}
 
 export function useThreads({ onResetChat, onStatus }) {
   const [threads, setThreads] = useState([]);
@@ -40,6 +45,28 @@ export function useThreads({ onResetChat, onStatus }) {
     [activeThreadId, onResetChat],
   );
 
+  const forkThreadAt = useCallback(
+    (index) => {
+      const branched = forkMessages(messages, index);
+      if (!branched.length) return;
+      setThreads((current) => upsertThread(current, activeThreadId, messages));
+      setActiveThreadId(createThreadId());
+      setMessages(branched);
+      onResetChat();
+      onStatus("Branched into a new thread from here.");
+    },
+    [activeThreadId, messages, onResetChat, onStatus],
+  );
+
+  const editFromMessage = useCallback(
+    (index) => {
+      setMessages((current) => current.slice(0, index));
+      onResetChat();
+      onStatus("Editing message — resend when ready.");
+    },
+    [onResetChat, onStatus],
+  );
+
   const clearAllThreads = useCallback(() => {
     if (!window.confirm("Clear all chat history? This can't be undone.")) return;
     setThreads([]);
@@ -57,12 +84,12 @@ export function useThreads({ onResetChat, onStatus }) {
       const title = threadTitle(messages);
       const stamp = new Date().toISOString().slice(0, 10);
       if (format === "csv") {
-        const rows = [["role", "content"], ...messages.map((message) => [message.role, message.content])];
+        const rows = [["role", "content"], ...messages.map((message) => [message.role, exportedContent(message)])];
         const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
         downloadTextFile(`smartlocalai-${stamp}.csv`, csv, "text/csv");
       } else {
         const markdown = `# ${title}\n\n${messages
-          .map((message) => `${message.role === "user" ? "## You" : "## Smart LocalAI"}\n\n${String(message.content ?? "")}`)
+          .map((message) => `${message.role === "user" ? "## You" : "## Smart LocalAI"}\n\n${exportedContent(message)}`)
           .join("\n\n")}\n`;
         downloadTextFile(`smartlocalai-${stamp}.md`, markdown, "text/markdown");
       }
@@ -81,7 +108,9 @@ export function useThreads({ onResetChat, onStatus }) {
     startNewThread,
     openThread,
     deleteThread,
+    editFromMessage,
     clearAllThreads,
     exportThread,
+    forkThreadAt,
   };
 }

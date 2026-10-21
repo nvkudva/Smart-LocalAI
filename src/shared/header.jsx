@@ -1,24 +1,27 @@
-import HistoryMenu from "../chat/historyMenu.jsx";
 import * as Icons from "./icons.jsx";
 
-export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpenSettings, historyMenuProps }) {
+export function Header({ title, isHistoryOpen, onToggleHistory, onNewChat, onToggleTheme, onOpenSettings }) {
   return (
     <header className="topbar">
-      <span className="topbar-spacer" />
       <div className="top-actions">
         <button
+          aria-expanded={isHistoryOpen}
           aria-label="Chat history"
-          className="icon-btn"
-          data-menu-toggle="history"
-          onClick={() => onToggleMenu("history")}
+          className={`icon-btn ${isHistoryOpen ? "is-on" : ""}`}
+          onClick={onToggleHistory}
           title="Chat history"
           type="button"
         >
           <Icons.History />
         </button>
         <button aria-label="New chat" className="icon-btn" onClick={onNewChat} title="New chat" type="button">
-          <Icons.Plus />
+          <Icons.NewChat />
         </button>
+      </div>
+      <span className="topbar-title" title={title}>
+        {title}
+      </span>
+      <div className="top-actions">
         <button aria-label="Toggle theme" className="icon-btn" onClick={onToggleTheme} title="Toggle theme" type="button">
           <Icons.Theme />
         </button>
@@ -26,8 +29,6 @@ export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpe
           <Icons.Settings />
         </button>
       </div>
-
-      {openMenu === "history" && <HistoryMenu {...historyMenuProps} />}
     </header>
   );
 }
@@ -35,6 +36,9 @@ export function Header({ openMenu, onToggleMenu, onNewChat, onToggleTheme, onOpe
 export function SharingBar({ page, onToggleAttach, onPick, onUndo, onClearPicked }) {
   const selection = (page.snapshot?.selection || "").trim();
   const sharing = page.attachPage && page.pageReady;
+  const hasPage = Boolean(page.tabId);
+  const canActOnPage = hasPage && page.pageReady;
+  const noPageHint = hasPage ? "Unavailable on this page" : "No page attached";
 
   return (
     <>
@@ -48,20 +52,29 @@ export function SharingBar({ page, onToggleAttach, onPick, onUndo, onClearPicked
         <button
           aria-label="Pick element"
           className="icon-btn icon-btn-sm"
+          disabled={!canActOnPage}
           onClick={onPick}
-          title="Pick element on page"
+          title={canActOnPage ? "Pick element on page" : noPageHint}
           type="button"
         >
-          <Icons.Inspect size={16} />
+          <Icons.Target size={16} />
         </button>
-        <button aria-label="Undo page edit" className="icon-btn icon-btn-sm" onClick={onUndo} title="Undo page edit" type="button">
+        <button
+          aria-label="Undo page edit"
+          className="icon-btn icon-btn-sm"
+          disabled={!canActOnPage}
+          onClick={onUndo}
+          title={canActOnPage ? "Undo page edit" : noPageHint}
+          type="button"
+        >
           <Icons.Undo size={16} />
         </button>
         <button
           aria-label={sharing ? "Stop sharing page" : "Share page"}
           className="icon-btn icon-btn-sm"
+          disabled={!hasPage}
           onClick={onToggleAttach}
-          title={sharing ? "Stop sharing page" : "Share page"}
+          title={hasPage ? (sharing ? "Stop sharing page" : "Share page") : "No page attached"}
           type="button"
         >
           {sharing ? <Icons.Close size={16} /> : <Icons.Check size={16} />}

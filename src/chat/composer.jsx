@@ -1,12 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as Icons from "../shared/icons.jsx";
 
-function shortModelLabel(active) {
-  if (!active) return "No model";
-  const name = String(active.model || "");
-  return name.length > 11 ? `${name.slice(0, 10)}…` : name;
-}
-
 export default function Composer({
   input,
   settings,
@@ -27,10 +21,30 @@ export default function Composer({
   onStop,
   onToggleMenu,
   onToggleSafe,
+  onComposerFocus,
+  promptHistory = [],
+  focusToken,
 }) {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const fileKindRef = useRef("image");
+  const historyIndexRef = useRef(null);
+  const draftRef = useRef("");
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (focusToken) textareaRef.current?.focus();
+  }, [focusToken]);
+
+  useEffect(() => {
+    if (input === "") {
+      historyIndexRef.current = null;
+      draftRef.current = "";
+    }
+  }, [input]);
 
   useEffect(() => {
     if (!attachRef) return;
@@ -52,24 +66,69 @@ export default function Composer({
 
   const safe = settings.safeMode;
 
+  const moveThroughHistory = (direction, textarea) => {
+    if (openMenu || promptHistory.length === 0) return false;
+    const currentIndex = historyIndexRef.current;
+
+    if (direction === "up") {
+      const caretAtStart = textarea.selectionStart === 0 && textarea.selectionEnd === 0;
+      if (currentIndex === null) {
+        if (textarea.value && !caretAtStart) return false;
+        draftRef.current = textarea.value;
+        historyIndexRef.current = promptHistory.length - 1;
+      } else if (currentIndex > 0) {
+        historyIndexRef.current -= 1;
+      } else {
+        return false;
+      }
+      onInputChange(promptHistory[historyIndexRef.current]);
+      return true;
+    }
+
+    if (currentIndex === null) return false;
+    if (currentIndex < promptHistory.length - 1) {
+      historyIndexRef.current += 1;
+      onInputChange(promptHistory[historyIndexRef.current]);
+    } else {
+      historyIndexRef.current = null;
+      onInputChange(draftRef.current);
+    }
+    return true;
+  };
+
+  const submit = () => {
+    onSubmit();
+    historyIndexRef.current = null;
+    draftRef.current = "";
+    textareaRef.current?.focus();
+  };
+
   return (
     <footer className="composer-wrap">
       <form
         className="composer"
         onSubmit={(event) => {
           event.preventDefault();
-          onSubmit();
+          submit();
         }}
       >
         {sharingBar}
 
         <textarea
           aria-label="Message input"
-          onChange={(event) => onInputChange(event.target.value)}
+          onChange={(event) => {
+            historyIndexRef.current = null;
+            draftRef.current = "";
+            onInputChange(event.target.value);
+          }}
+          onFocus={onComposerFocus}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
               event.preventDefault();
-              onSubmit();
+              submit();
+            }
+            if ((event.key === "ArrowUp" || event.key === "ArrowDown") && moveThroughHistory(event.key === "ArrowUp" ? "up" : "down", event.currentTarget)) {
+              event.preventDefault();
             }
           }}
           placeholder="Type / to use prompts, or ask anything…"
@@ -111,6 +170,8 @@ export default function Composer({
         <div className="composer-row">
           <div className="composer-actions">
             <button
+              aria-expanded={openMenu === "prompts"}
+              aria-haspopup="menu"
               aria-label="Prompt library"
               className="icon-btn composer-icon"
               data-menu-toggle="prompts"
@@ -122,30 +183,47 @@ export default function Composer({
             </button>
 
             <button
-              aria-label={safe ? "Permissions: approve page edits" : "Permissions: auto-apply page edits"}
-              className={`icon-btn composer-icon ${safe ? "is-warn" : "is-on"}`}
+              aria-checked={!safe}
+              aria-label="Auto-apply page edits"
+              className="auto-switch"
               onClick={onToggleSafe}
-              title={safe ? "Safe: approve edits — click for auto-apply" : "Auto-apply edits — click for safe approve"}
+              role="switch"
+              title={safe ? "Page edits wait for your approval — turn on to auto-apply" : "Page edits apply automatically — turn off to approve each"}
               type="button"
             >
-              {safe ? <Icons.ShieldOff /> : <Icons.Shield />}
+              <span className="auto-switch-track">
+                <span className="auto-switch-knob" />
+              </span>
+              <span className="auto-switch-label">Auto-apply</span>
+              <span className="auto-switch-label-short">Auto</span>
             </button>
           </div>
 
           <div className="composer-actions composer-actions-right">
             <button
+              aria-expanded={openMenu === "model"}
+              aria-haspopup="menu"
               className="pill-btn model-opener"
               data-menu-toggle="model"
               onClick={() => onToggleMenu("model")}
               title={active ? `${active.provider.name} · ${active.model}` : "Choose model"}
               type="button"
             >
-              <span className="model-opener-label">{shortModelLabel(active)}</span>
+              <span className="model-opener-label">{active ? active.model : "No model"}</span>
               <Icons.ChevronDown />
             </button>
 
             {busy ? (
-              <button aria-label="Stop" className="send-btn stop" onClick={onStop} title="Stop" type="button">
+              <button
+                aria-label="Stop"
+                className="send-btn stop"
+                onClick={() => {
+                  onStop();
+                  textareaRef.current?.focus();
+                }}
+                title="Stop"
+                type="button"
+              >
                 <Icons.Stop />
               </button>
             ) : (
@@ -159,7 +237,6 @@ export default function Composer({
         {openMenu === "model" && <div className="menu-anchor menu-anchor-model">{modelMenu}</div>}
         {openMenu === "prompts" && <div className="menu-anchor menu-anchor-left">{promptMenu}</div>}
       </form>
-      <p className="fineprint">AI can make mistakes. Page edits are undoable. Keys stay in local storage.</p>
     </footer>
   );
 }

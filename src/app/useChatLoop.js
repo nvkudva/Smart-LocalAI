@@ -7,11 +7,12 @@ import {
   THINKING_HINTS,
 } from "../shared/constants.js";
 import { isPageActionIntent } from "../page/intent.js";
-import { createThreadId } from "../shared/extensionState.js";
+import { createThreadId, tokensPerSecond } from "../shared/extensionState.js";
 import { buildPageContext } from "../page/pageContext.js";
-import { takePendingPrompt } from "../shared/storage.js";
+import * as storage from "../shared/storage.js";
 import * as PageAgent from "../page/pageAgent.js";
-import { modelCapabilities, userMessageWithAttachments } from "../models/providers.js";
+import { modelCapabilities, modelLabel, userMessageWithAttachments } from "../models/providers.js";
+import * as thinking from "../models/thinking.js";
 import { streamChat } from "../models/streamTransports.js";
 
 /**
@@ -38,19 +39,27 @@ export function useChatLoop({
   const [chunks, setChunks] = useState([]);
 
   const abortRef = useRef(null);
+  const isDiscardingRef = useRef(false);
   const actionResolversRef = useRef(new Map());
   const lastTldrRef = useRef("");
-  const pendingHandledRef = useRef(false);
   const sendTextRef = useRef(null);
   const streamFlushRef = useRef(0);
   const streamBufferRef = useRef("");
 
+  const cancelPendingActions = useCallback(() => {
+    for (const resolve of actionResolversRef.current.values()) resolve(false);
+    actionResolversRef.current.clear();
+  }, []);
+
   const resetChat = useCallback(() => {
+    isDiscardingRef.current = true;
+    abortRef.current?.abort();
+    cancelPendingActions();
     setActionCards([]);
     setStreamingMessage(null);
     setNotice(null);
     setChunks([]);
-  }, []);
+  }, [cancelPendingActions]);
 
   const updateActionCard = useCallback((id, patch) => {
     setActionCards((current) => current.map((card) => (card.id === id ? { ...card, ...patch } : card)));
@@ -107,8 +116,8 @@ export function useChatLoop({
   );
 
   const handleCitation = useCallback(
-    async (index) => {
-      const text = chunks[index - 1];
+    async (index, sourceChunks) => {
+      const text = (sourceChunks || chunks)[index - 1];
       if (!text || !page.tabId) return;
       onStatus(`Scrolling to citation [${index}]…`);
       try {
@@ -122,8 +131,9 @@ export function useChatLoop({
   );
 
   const sendText = useCallback(
-    async (rawText, mode) => {
+    async (rawText, mode, options = {}) => {
       const text = String(rawText || "").trim();
+      const isRetry = Array.isArray(options.retryHistory);
       if ((!text && !attachments.length) || busy) return;
       if (!active?.model) {
         setNotice({
@@ -137,13 +147,17 @@ export function useChatLoop({
         return;
       }
 
-      if (attachments.some((file) => file.kind === "image") && !modelCapabilities(active.model, active.provider.protocol).vision) {
+      if (
+        !isRetry &&
+        attachments.some((file) => file.kind === "image") &&
+        !modelCapabilities(active.model, active.provider.protocol, active.visionOverride).vision
+      ) {
         onStatus("This model can't read images — remove them or switch to a vision model.");
         return;
       }
       let outgoing = null;
       let suffix = "";
-      if (attachments.length) {
+      if (!isRetry && attachments.length) {
         const built = userMessageWithAttachments(text, attachments, active.provider.protocol);
         if (built.error) {
           onStatus(built.error);
@@ -155,13 +169,19 @@ export function useChatLoop({
       const snapshot = settings.includePage && page.attachPage ? await page.refreshPage() : page.snapshot;
       const context = buildPageContext(snapshot, active.provider, page.picked?.selector || "");
       setChunks(context.chunks);
+      const userMessage = isRetry
+        ? null
+        : { id: createThreadId(), role: "user", content: text + suffix, createdAt: Date.now() };
+      const requestHistory = isRetry ? options.retryHistory : [...messages, userMessage];
       if (!activeThreadId) threadsApi.setActiveThreadId(createThreadId());
-      const userMessage = { id: createThreadId(), role: "user", content: text + suffix };
-      const requestHistory = [...messages, userMessage];
-      threadsApi.setMessages(requestHistory);
+      if (!isRetry) threadsApi.setMessages(requestHistory);
       setNotice(null);
-      onClearInput();
-      setAttachments([]);
+      setActionCards([]);
+      isDiscardingRef.current = false;
+      if (!isRetry) {
+        onClearInput();
+        setAttachments([]);
+      }
       setBusy(true);
       const abort = new AbortController();
       abortRef.current = abort;
@@ -178,14 +198,22 @@ export function useChatLoop({
       const customSystem = String(settings.systemPrompt || "").trim();
       const thinkingHint = THINKING_HINTS[settings.thinkingLevel] || THINKING_HINTS.medium;
       const system = [customSystem, baseSystem, thinkingHint].filter(Boolean).join("\n\n") + context.text;
-      let requestMessages = [{ role: "system", content: system }, ...requestHistory.slice(-12)];
+      const recentHistory = requestHistory.slice(-12);
+      const firstUserIndex = recentHistory.findIndex((message) => message.role === "user");
+      const alignedHistory = recentHistory
+        .slice(Math.max(firstUserIndex, 0))
+        .map((message) =>
+          message.role === "assistant" ? { ...message, content: thinking.stripThinking(message.content) } : message,
+        );
+      let requestMessages = [{ role: "system", content: system }, ...alignedHistory];
       if (outgoing) requestMessages[requestMessages.length - 1] = outgoing;
       let finalText = "";
       let previousSignature = "";
+      const startedAt = performance.now();
 
       try {
         for (let iteration = 0; iteration < 5; iteration += 1) {
-          const modelName = `${active.provider.name} · ${active.model}`;
+          const modelName = modelLabel(active.provider, active.model);
           streamBufferRef.current = "";
           streamFlushRef.current = 0;
           setStreamingMessage({ role: "assistant", content: "", modelName, streaming: true });
@@ -207,7 +235,8 @@ export function useChatLoop({
           );
           finalText = full;
           setStreamingMessage({ role: "assistant", content: full, modelName, streaming: true });
-          const actions = agentIntent ? PageAgent.parseAgentActions(full) : [];
+          const answer = thinking.stripThinking(full);
+          const actions = agentIntent ? PageAgent.parseAgentActions(answer) : [];
           if (!actions.length) break;
           const signature = JSON.stringify(actions);
           if (signature === previousSignature) break;
@@ -222,7 +251,7 @@ export function useChatLoop({
           const refreshedSnapshot = await page.refreshPage();
           requestMessages = [
             ...requestMessages,
-            { role: "assistant", content: full },
+            { role: "assistant", content: answer },
             {
               role: "user",
               content:
@@ -237,21 +266,10 @@ export function useChatLoop({
           ];
           if (results.every((result) => !result.ok)) break;
         }
-        if (finalText) {
-          const visibleText = PageAgent.stripAgentBlocks(finalText) || finalText;
-          threadsApi.setMessages((current) => [
-            ...current,
-            {
-              id: createThreadId(),
-              role: "assistant",
-              content: visibleText,
-              modelName: `${active.provider.name} · ${active.model}`,
-              chunks: context.chunks,
-            },
-          ]);
-        }
       } catch (error) {
-        if (error.name !== "AbortError") {
+        if (error.name === "AbortError") {
+          finalText = streamBufferRef.current || finalText;
+        } else {
           setNotice({
             id: "notice-error",
             role: "assistant",
@@ -261,6 +279,21 @@ export function useChatLoop({
           });
         }
       } finally {
+        if (finalText && !isDiscardingRef.current) {
+          const visibleText = PageAgent.stripAgentBlocks(finalText) || finalText;
+          threadsApi.setMessages((current) => [
+            ...current,
+            {
+              id: createThreadId(),
+              role: "assistant",
+              content: visibleText,
+              modelName: modelLabel(active.provider, active.model),
+              chunks: context.chunks,
+              createdAt: Date.now(),
+              tps: tokensPerSecond(visibleText.length, performance.now() - startedAt),
+            },
+          ]);
+        }
         setStreamingMessage(null);
         setBusy(false);
         abortRef.current = null;
@@ -287,14 +320,31 @@ export function useChatLoop({
   );
   sendTextRef.current = sendText;
 
+  const retryLast = useCallback(() => {
+    if (busy) return;
+    let lastUserIndex = -1;
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (messages[index].role === "user") {
+        lastUserIndex = index;
+        break;
+      }
+    }
+    if (lastUserIndex < 0) return;
+    const history = messages.slice(0, lastUserIndex + 1);
+    threadsApi.setMessages(history);
+    sendText(history[lastUserIndex].content, undefined, { retryHistory: history });
+  }, [busy, messages, sendText, threadsApi]);
+
   useEffect(() => {
-    if (!loaded || pendingHandledRef.current) return;
-    pendingHandledRef.current = true;
-    takePendingPrompt()
-      .then((prompt) => {
-        if (prompt) sendTextRef.current?.(prompt, "chat");
-      })
-      .catch(() => {});
+    if (!loaded) return undefined;
+    const runPendingPrompt = () =>
+      storage.takePendingPrompt()
+        .then((prompt) => {
+          if (prompt) sendTextRef.current?.(prompt, "chat");
+        })
+        .catch(() => {});
+    runPendingPrompt();
+    return storage.onPendingPrompt(runPendingPrompt);
   }, [loaded]);
 
   useEffect(() => {
@@ -312,11 +362,11 @@ export function useChatLoop({
     notice,
     resetChat,
     resolveAction,
+    retryLast,
     sendText,
     stopStream: () => {
       abortRef.current?.abort();
-      for (const resolve of actionResolversRef.current.values()) resolve(false);
-      actionResolversRef.current.clear();
+      cancelPendingActions();
     },
     streamingMessage,
   };

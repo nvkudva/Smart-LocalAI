@@ -1,6 +1,8 @@
 import { memo } from "react";
 import { stripAgentBlocks } from "../page/pageAgent.js";
+import { formatTime } from "../shared/extensionState.js";
 import * as Icons from "../shared/icons.jsx";
+import * as thinking from "../models/thinking.js";
 import Markdown from "./markdown.jsx";
 
 function actionSummary(action) {
@@ -20,25 +22,48 @@ export function ActionCard({ card, onApply, onSkip }) {
       <h4>Page action · {summary.title}</h4>
       <div className="target">{summary.target}</div>
       {summary.payload && <pre>{summary.payload}</pre>}
-      <div className="row">
-        <button className="btn primary" disabled={!pending} onClick={() => onApply(card.id)} type="button">
-          Apply
-        </button>
-        <button className="btn" disabled={!pending} onClick={() => onSkip(card.id)} type="button">
-          Skip
-        </button>
-      </div>
+      {pending && (
+        <div className="row">
+          <button className="btn primary" onClick={() => onApply(card.id)} type="button">
+            Apply
+          </button>
+          <button className="btn" onClick={() => onSkip(card.id)} type="button">
+            Skip
+          </button>
+        </div>
+      )}
       {card.result && <div className={`result ${card.ok ? "ok" : "fail"}`}>{card.result}</div>}
     </article>
   );
 }
 
+function ThinkingBlock({ text, isThinking }) {
+  const lastLine = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .at(-1);
+  return (
+    <details className="think">
+      <summary>
+        <span className="think-chevron">
+          <Icons.ChevronDown size={12} />
+        </span>
+        <span className="think-label">{isThinking ? "Thinking…" : "Thought"}</span>
+        {isThinking && lastLine && <span className="think-peek">{lastLine}</span>}
+      </summary>
+      <div className="think-body">{text}</div>
+    </details>
+  );
+}
+
 function copyText(event, text) {
   const button = event.currentTarget;
+  const original = button.innerHTML;
   const done = (label) => {
     button.textContent = label;
     window.setTimeout(() => {
-      button.textContent = "Copy";
+      button.innerHTML = original;
     }, 1200);
   };
   navigator.clipboard
@@ -48,17 +73,72 @@ function copyText(event, text) {
   if (!navigator.clipboard) done("Copy failed");
 }
 
-export const Message = memo(function Message({ message, chunks, onCitation }) {
+function Meta({ message, index, onFork, children }) {
+  const stamp = formatTime(message.createdAt);
+  return (
+    <div className="msg-actions">
+      {stamp && (
+        <span className="msg-time" title={new Date(message.createdAt).toLocaleString()}>
+          {stamp}
+        </span>
+      )}
+      {children}
+      <button
+        aria-label="Start new thread from here"
+        className="mini-btn mini-icon"
+        onClick={() => onFork?.(index)}
+        title="Start new thread from here"
+        type="button"
+      >
+        <Icons.Branch size={13} />
+      </button>
+    </div>
+  );
+}
+
+export const Message = memo(function Message({
+  message,
+  chunks,
+  index,
+  isThinkingHidden,
+  onCitation,
+  onFork,
+  onEdit,
+  onRetry,
+  canRetry,
+}) {
   if (message.role === "user") {
     return (
       <div className="msg user">
         <div className="bubble">{String(message.content ?? "")}</div>
+        <Meta index={index} message={message} onFork={onFork}>
+          <button
+            aria-label="Copy message"
+            className="mini-btn mini-icon"
+            onClick={(event) => copyText(event, message.content)}
+            title="Copy message"
+            type="button"
+          >
+            <Icons.Copy size={13} />
+          </button>
+          <button
+            aria-label="Edit and resend message"
+            className="mini-btn mini-icon"
+            onClick={() => onEdit?.(index)}
+            title="Edit and resend"
+            type="button"
+          >
+            <Icons.Edit size={13} />
+          </button>
+        </Meta>
       </div>
     );
   }
 
-  const sourceText = String(message.content ?? "");
-  const visibleText = stripAgentBlocks(sourceText) || sourceText;
+  const { thinking: reasoning, answer, isThinking } = thinking.splitThinking(message.content);
+  const visibleText = stripAgentBlocks(answer) || answer;
+  const hasReasoning = Boolean(reasoning) && !isThinkingHidden;
+  const isWaitingOnAnswer = !visibleText && Boolean(reasoning);
   return (
     <div className={`msg ai ${message.error ? "error" : ""}`}>
       <div className="ai-label">
@@ -67,15 +147,36 @@ export const Message = memo(function Message({ message, chunks, onCitation }) {
         </span>
         <span>{message.modelName || "Smart LocalAI"}</span>
       </div>
-      <div className="body">
-        <Markdown chunks={chunks} onCitation={onCitation} text={visibleText} />
-      </div>
-      {!message.streaming && (
-        <div className="msg-actions">
-          <button className="mini-btn" onClick={(event) => copyText(event, message.content)} type="button">
-            Copy
-          </button>
+      {hasReasoning && <ThinkingBlock isThinking={isThinking} text={reasoning} />}
+      {(!isWaitingOnAnswer || isThinkingHidden) && (
+        <div className="body">
+          <Markdown chunks={chunks} onCitation={(citationIndex) => onCitation?.(citationIndex, chunks)} text={visibleText} />
         </div>
+      )}
+      {!message.streaming && (
+        <Meta index={index} message={message} onFork={onFork}>
+          {message.tps ? <span className="msg-tps" title="Tokens per second">~{message.tps} tok/s</span> : null}
+          <button
+            aria-label="Copy message"
+            className="mini-btn mini-icon"
+            onClick={(event) => copyText(event, answer)}
+            title="Copy message"
+            type="button"
+          >
+            <Icons.Copy size={13} />
+          </button>
+          {canRetry && (
+            <button
+              aria-label="Regenerate answer"
+              className="mini-btn mini-icon"
+              onClick={onRetry}
+              title="Regenerate answer"
+              type="button"
+            >
+              <Icons.Refresh size={13} />
+            </button>
+          )}
+        </Meta>
       )}
     </div>
   );

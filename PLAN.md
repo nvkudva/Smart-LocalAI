@@ -7,7 +7,7 @@ Chat in sidebar + agent controls live page (style, content, script) via any LLM.
 ## Architecture
 - `manifest.json` — MV3, sidePanel, scripting, storage, tabs, `<all_urls>` host access (needed for localhost LLM + page injection).
 - `background.js` — service worker. Opens panel on toolbar click, relays tab updates.
-- `src/` — React + Vite sidebar UI (see ARCHITECTURE.md for the feature-folder layout).
+- `src/` — React + Vite sidebar UI (load unpacked from `dist/`) (see ARCHITECTURE.md for the feature-folder layout).
 - `src/models/providers.js` — provider registry, detection, model scoring, streaming chat.
 - `src/page/` — page snapshot, element picker, action executor, undo stack (injected via `chrome.scripting`).
 
@@ -44,6 +44,7 @@ Chat in sidebar + agent controls live page (style, content, script) via any LLM.
 ## Rejected alternatives
 - Content-script always-on: rejected, injection on demand is lighter + fewer permissions prompts.
 - OpenAI function-calling only: rejected, local models vary; fenced JSON works on every endpoint. Native tools can layer later.
-- React/Vite build: rejected, zero-build loads unpacked instantly, easier audit.
 
 ## Revisions
+
+- Superseded: the sidebar is a React + Vite build, not zero-build. Context-menu prompts travel via `chrome.storage.session` (`pendingPrompt`); a panel that is already open listens to `storage.onChanged`.

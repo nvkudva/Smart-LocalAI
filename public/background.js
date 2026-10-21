@@ -34,49 +34,26 @@ function setupMenus() {
 chrome.runtime.onInstalled.addListener(setupMenus);
 chrome.runtime.onStartup.addListener(setupMenus);
 
-let pendingPrompt = null;
-
-async function stashPrompt(prompt) {
-  pendingPrompt = prompt;
-  try {
-    if (prompt) await chrome.storage.session.set({ pendingPrompt: prompt });
-    else await chrome.storage.session.remove("pendingPrompt");
-  } catch {
-    /* session storage unavailable — memory only */
-  }
-}
-
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab?.windowId) return;
   const build = SELECTION_ACTIONS[info.menuItemId];
-  if (build) {
-    await stashPrompt(build(info.selectionText || ""));
-  } else if (info.menuItemId === "freeai-summarize") {
-    await stashPrompt("Summarize this page: key points, then one-line TL;DR.");
-  } else {
-    return;
-  }
-  await chrome.sidePanel.open({ windowId: tab.windowId });
+  let prompt = "";
+  if (build) prompt = build(info.selectionText || "");
+  else if (info.menuItemId === "freeai-summarize") prompt = "Summarize this page: key points, then one-line TL;DR.";
+  else return;
+  // open() needs the user gesture, so it is called in the same tick as the
+  // storage write. An already-open panel picks the prompt up from onChanged.
+  const stashing = chrome.storage.session.set({ pendingPrompt: prompt });
+  const opening = chrome.sidePanel.open({ windowId: tab.windowId });
+  await Promise.all([stashing, opening]);
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "TAKE_PENDING_PROMPT") {
-    (async () => {
-      let prompt = pendingPrompt;
-      try {
-        const stored = await chrome.storage.session.get("pendingPrompt");
-        if (stored?.pendingPrompt) prompt = stored.pendingPrompt;
-        await chrome.storage.session.remove("pendingPrompt");
-      } catch {
-        /* fall back to memory */
-      }
-      pendingPrompt = null;
-      sendResponse({ prompt });
-    })();
-    return true;
-  }
-  if (message.type === "OPEN_PANEL" && sender.tab) {
-    chrome.sidePanel.open({ windowId: sender.tab.windowId });
-  }
-  return false;
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type !== "TAKE_PENDING_PROMPT") return false;
+  (async () => {
+    const stored = await chrome.storage.session.get("pendingPrompt");
+    await chrome.storage.session.remove("pendingPrompt");
+    sendResponse({ prompt: stored.pendingPrompt || null });
+  })();
+  return true;
 });
