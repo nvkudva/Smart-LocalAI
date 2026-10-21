@@ -106,7 +106,7 @@ export default function App() {
         event.stopPropagation();
         setOpenMenu(null);
         setIsSlashMenu(false);
-        if (input.startsWith("/")) setInput("");
+        if (isSlashMenu && input.startsWith("/")) setInput("");
         return;
       }
       if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
@@ -125,7 +125,7 @@ export default function App() {
     };
     document.addEventListener("keydown", handleMenuKey, true);
     return () => document.removeEventListener("keydown", handleMenuKey, true);
-  }, [input, openMenu]);
+  }, [input, isSlashMenu, openMenu]);
 
   useEffect(() => {
     document.body.dataset.theme = settings.theme || "light";
@@ -178,6 +178,7 @@ export default function App() {
       const pageText = page.snapshot?.text || selection;
       setInput(String(promptText).split("{selection}").join(selection).split("{page}").join(pageText));
       setOpenMenu(null);
+      setIsSlashMenu(false);
     },
     [page.snapshot],
   );
@@ -285,9 +286,15 @@ export default function App() {
           />
         }
         onInputChange={(value) => {
-          if (value === "/") setOpenMenu("prompts");
+          if (value === "/") {
+            setOpenMenu("prompts");
+            setIsSlashMenu(true);
+          }
           if (openMenu === "model") setOpenMenu(null);
-          if (openMenu === "prompts" && !value.startsWith("/")) setOpenMenu(null);
+          if (openMenu === "prompts" && !value.startsWith("/")) {
+            setOpenMenu(null);
+            setIsSlashMenu(false);
+          }
           setInput(value);
         }}
         onComposerFocus={() => {
@@ -295,7 +302,10 @@ export default function App() {
         }}
         onStop={() => chat.stopStream()}
         onSubmit={() => chat.sendText(input)}
-        onToggleMenu={(menu) => setOpenMenu((current) => (current === menu ? null : menu))}
+        onToggleMenu={(menu) => {
+          if (menu === "prompts") setIsSlashMenu(false);
+          setOpenMenu((current) => (current === menu ? null : menu));
+        }}
         onToggleSafe={() => setSettings((current) => ({ ...current, safeMode: !current.safeMode }))}
         focusToken={composerFocus}
         openMenu={openMenu}
@@ -307,7 +317,7 @@ export default function App() {
             canImage={caps.vision}
             canDoc={Boolean(active?.model)}
             docHint={caps.pdf ? "Text files and PDFs" : "Text files (PDFs need Claude / Gemini)"}
-            query={input.startsWith("/") ? input.slice(1) : ""}
+            query={isSlashMenu && input.startsWith("/") ? input.slice(1) : ""}
             onAttachImage={() => {
               setOpenMenu(null);
               attachRef.current?.("image");
