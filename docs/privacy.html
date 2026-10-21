@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy — Smart LocalAI</title>
+    <meta
+      name="description"
+      content="How Smart LocalAI handles data: keys in local storage, local models stay on your machine, page context is a toggle."
+    />
+    <meta name="theme-color" content="#0b0e15" />
+    <link rel="icon" href="images/icon128.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #080b12;
+        --panel: rgba(255, 255, 255, 0.035);
+        --line: rgba(255, 255, 255, 0.1);
+        --line-2: rgba(255, 255, 255, 0.16);
+        --text: #f2f5fa;
+        --muted: #9aa6b8;
+        --blue: #4c78ff;
+        --green: #3ddc97;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 17px;
+        line-height: 1.68;
+        -webkit-font-smoothing: antialiased;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+          radial-gradient(800px 460px at 15% -6%, rgba(76, 120, 255, 0.24), transparent 65%),
+          radial-gradient(700px 420px at 88% 0%, rgba(139, 108, 255, 0.16), transparent 62%);
+      }
+      .wrap {
+        max-width: 780px;
+        margin: 0 auto;
+        padding: 0 26px 90px;
+      }
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 46px;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 66px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+        text-decoration: none;
+        color: inherit;
+      }
+      .top img {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+      }
+      .back {
+        font-size: 14px;
+        color: var(--muted);
+        text-decoration: none;
+      }
+      h1 {
+        font-size: 40px;
+        letter-spacing: -1.3px;
+        margin: 0 0 6px;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 14.5px;
+        margin: 0 0 40px;
+      }
+      h2 {
+        font-size: 22px;
+        letter-spacing: -0.5px;
+        margin: 44px 0 12px;
+      }
+      p,
+      li {
+        color: var(--muted);
+      }
+      strong {
+        color: var(--text);
+        font-weight: 500;
+      }
+      ul {
+        padding-left: 20px;
+      }
+      li {
+        margin: 8px 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 18px 0 8px;
+        font-size: 15px;
+      }
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: var(--panel);
+        color: var(--text);
+        font-weight: 500;
+      }
+      td {
+        color: var(--muted);
+      }
+      code {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 2px 6px;
+        color: #9fb6ff;
+      }
+      a {
+        color: #9fb6ff;
+      }
+      .box {
+        border: 1px solid var(--line-2);
+        background: var(--panel);
+        border-radius: 14px;
+        padding: 20px 22px;
+        margin: 26px 0;
+      }
+      .box p {
+        margin: 0;
+      }
+      .box strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 44px 0;
+      }
+      footer {
+        color: var(--muted);
+        font-size: 14.5px;
+        margin-top: 54px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <a class="top" href="index.html"><img src="images/icon128.png" alt="" /> Smart LocalAI</a>
+      </header>
+
+      <h1>Privacy Policy</h1>
+      <p class="meta">
+        Smart LocalAI · last updated 21 October 2026 · source:
+        <a href="https://github.com/nvkudva/Smart-LocalAI">github.com/nvkudva/Smart-LocalAI</a>
+      </p>
+
+      <div class="box">
+        <p>
+          <strong>The short version.</strong> Smart LocalAI has no servers of its own, no
+          analytics, no ads and no telemetry. With a local model — Chrome's built-in Gemini
+          Nano, LM Studio or Ollama — your pages and prompts never leave your computer. With
+          a cloud provider, the prompt and the page context you enabled go to that provider
+          under your own API key. Your keys, settings and chat history live in
+          <code>chrome.storage.local</code> in your browser profile.
+        </p>
+      </div>
+
+      <h2>What the extension reads</h2>
+      <p>Only what the feature needs, and only on the page you are looking at.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>When</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Page title and URL</td>
+            <td>Always, for the “Sharing …” bar</td>
+            <td>So you can see which page is in context</td>
+          </tr>
+          <tr>
+            <td>Visible page text (capped)</td>
+            <td>Only while <strong>Page ✓</strong> is on</td>
+            <td>To answer questions about the page</td>
+          </tr>
+          <tr>
+            <td>DOM outline — headings, buttons, inputs</td>
+            <td>Only while <strong>Page ✓</strong> is on</td>
+            <td>To find the right element for an edit</td>
+          </tr>
+          <tr>
+            <td>Your text selection</td>
+            <td>When you select text and use the right-click menu</td>
+            <td>To act on what you selected</td>
+          </tr>
+          <tr>
+            <td>Images, PDFs, code files</td>
+            <td>Only files you attach</td>
+            <td>To let the model read them</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Turn <strong>Page ✓</strong> off in the panel and the page text and DOM outline are
+        not sent at all.
+      </p>
+
+      <h2>What is stored, and where</h2>
+      <p>
+        Everything is stored locally in <code>chrome.storage.local</code> — inside your
+        browser profile, never on a server:
+      </p>
+      <ul>
+        <li>API keys, provider URL, selected model, per-provider model choices</li>
+        <li>
+          Settings: theme, safe mode, include-page, thinking level, auto-summary, custom
+          system prompt
+        </li>
+        <li>Chat history and threads, saved prompts</li>
+      </ul>
+      <p>
+        A context-menu click parks one pending prompt in
+        <code>chrome.storage.session</code>; it is read immediately and deleted.
+      </p>
+      <p>
+        To erase everything: clear history in the extension's settings, or remove the
+        extension — that deletes its storage.
+      </p>
+
+      <h2>What leaves your machine</h2>
+      <p>Only requests to the endpoint you configured:</p>
+      <ul>
+        <li>
+          <strong>Chrome built-in Gemini Nano</strong> — runs on-device. No network request.
+        </li>
+        <li>
+          <strong>LM Studio</strong> (<code>http://localhost:1234/v1</code>) and
+          <strong>Ollama</strong> (<code>http://localhost:11434</code>) — requests go to your
+          own machine over localhost.
+        </li>
+        <li>
+          <strong>A cloud provider</strong> (Anthropic, OpenAI, Gemini, DeepSeek, custom) — the
+          prompt, the enabled page context and any attachment are sent to that provider using
+          the API key you entered. We do not proxy, log or copy these requests.
+        </li>
+      </ul>
+
+      <h2>Page edits</h2>
+      <p>
+        The extension can propose changes to the current page — CSS, text, hiding an element.
+        Every change is shown to you as a card with its exact payload and is applied only
+        when you approve it. Every applied change can be undone from the panel. The extension
+        never edits a page on its own, and it never runs code that a model generated — only
+        the fixed set of actions listed in the panel.
+      </p>
+
+      <h2>Permissions, and why each one is needed</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>sidePanel</code></td>
+            <td>The panel this extension lives in</td>
+          </tr>
+          <tr>
+            <td><code>storage</code></td>
+            <td>Keeping your keys, settings and history on your machine</td>
+          </tr>
+          <tr>
+            <td><code>scripting</code></td>
+            <td>Applying an edit you approved, and reading the page you asked about</td>
+          </tr>
+          <tr>
+            <td><code>tabs</code></td>
+            <td>Knowing which tab you are on, and refreshing context when you switch tabs</td>
+          </tr>
+          <tr>
+            <td><code>contextMenus</code></td>
+            <td>“Ask Smart LocalAI” on selected text, “Summarize this page”</td>
+          </tr>
+          <tr>
+            <td>Host access <code>&lt;all_urls&gt;</code></td>
+            <td>
+              Reaching a local model server on <code>localhost</code> /
+              <code>127.0.0.1</code>, and applying approved edits on any page
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>What we do not do</h2>
+      <p>
+        No analytics, no crash reporting, no user tracking, no advertising, no selling or
+        sharing of data, no remote code, no background uploads of your browsing. We cannot
+        read your data, because we never receive it.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        The extension is a general-purpose developer tool and is not directed at children.
+      </p>
+
+      <h2>Changes to this policy</h2>
+      <p>
+        Any change will be published with this page, with the “last updated” date changed.
+        Continuing to use the extension after a change means you accept it.
+      </p>
+
+      <hr />
+      <footer>
+        <p>
+          Questions: <a href="https://github.com/nvkudva/Smart-LocalAI/issues">open an issue</a>.
+          The use of information received from Google APIs will adhere to the Chrome Web Store
+          User Data Policy, including the Limited Use requirements.
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

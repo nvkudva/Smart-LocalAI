@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart LocalAI — AI in your browser sidebar, on your machine</title>
+    <meta
+      name="description"
+      content="Smart LocalAI is a Chrome side-panel extension that chats with Chrome's built-in Gemini Nano, LM Studio or Ollama and can restyle the page you're reading or pull data out of it. Free, no account, keys stay in your browser."
+    />
+    <meta name="theme-color" content="#0b0e15" />
+    <meta property="og:title" content="Smart LocalAI — AI in your browser sidebar" />
+    <meta
+      property="og:description"
+      content="Chat with a local model beside the page you're reading. Restyle it, extract its data, keep your keys on your machine."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="images/hero.png" />
+    <link rel="icon" href="images/icon128.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #080b12;
+        --bg-2: #0b0e15;
+        --panel: rgba(255, 255, 255, 0.035);
+        --panel-2: rgba(255, 255, 255, 0.06);
+        --line: rgba(255, 255, 255, 0.1);
+        --line-2: rgba(255, 255, 255, 0.16);
+        --text: #f2f5fa;
+        --muted: #9aa6b8;
+        --dim: #6d7889;
+        --blue: #4c78ff;
+        --violet: #8b6cff;
+        --green: #3ddc97;
+        --amber: #ffb454;
+        --radius: 18px;
+        --max: 1160px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 17px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background:
+          radial-gradient(900px 520px at 18% -8%, rgba(76, 120, 255, 0.28), transparent 65%),
+          radial-gradient(760px 460px at 92% 4%, rgba(139, 108, 255, 0.2), transparent 62%),
+          radial-gradient(700px 520px at 50% 108%, rgba(61, 220, 151, 0.12), transparent 60%);
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: radial-gradient(1100px 800px at 50% 22%, #000 20%, transparent 78%);
+      }
+
+      a {
+        color: inherit;
+      }
+      img {
+        max-width: 100%;
+        display: block;
+      }
+      .wrap {
+        width: 100%;
+        max-width: var(--max);
+        margin: 0 auto;
+        padding: 0 28px;
+      }
+
+      /* ---------- nav ---------- */
+      header.nav {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        backdrop-filter: blur(14px);
+        background: rgba(8, 11, 18, 0.72);
+        border-bottom: 1px solid var(--line);
+      }
+      .nav-in {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        height: 66px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+        text-decoration: none;
+        font-size: 18px;
+      }
+      .brand img {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+      }
+      .nav-links {
+        display: flex;
+        gap: 24px;
+        margin-left: auto;
+        font-size: 14.5px;
+        color: var(--muted);
+      }
+      .nav-links a {
+        text-decoration: none;
+        transition: color 0.15s ease;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 10px 20px;
+        font-size: 14.5px;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+      .btn-primary {
+        background: linear-gradient(140deg, var(--blue), var(--violet));
+        color: #fff;
+        box-shadow: 0 10px 28px rgba(76, 120, 255, 0.32);
+      }
+      .btn-ghost {
+        border-color: var(--line-2);
+        color: var(--text);
+        background: var(--panel);
+      }
+      .btn-ghost:hover {
+        background: var(--panel-2);
+      }
+      .btn-lg {
+        padding: 14px 28px;
+        font-size: 16.5px;
+      }
+
+      /* ---------- hero ---------- */
+      .hero {
+        padding: 92px 0 72px;
+        text-align: center;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        border: 1px solid var(--line-2);
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 7px 16px;
+        font-size: 13.5px;
+        color: var(--muted);
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 12px var(--green);
+      }
+      h1 {
+        font-size: clamp(38px, 6.2vw, 68px);
+        line-height: 1.04;
+        letter-spacing: -2.2px;
+        margin: 26px auto 0;
+        max-width: 15ch;
+        font-weight: 700;
+      }
+      .grad {
+        background: linear-gradient(100deg, #8fb4ff 0%, #b49cff 45%, #7ce8b4 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .lede {
+        max-width: 62ch;
+        margin: 24px auto 0;
+        color: var(--muted);
+        font-size: 19px;
+      }
+      .cta-row {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 34px;
+        flex-wrap: wrap;
+      }
+      .micro {
+        margin-top: 22px;
+        font-size: 13.5px;
+        color: var(--dim);
+      }
+      .micro span {
+        margin: 0 8px;
+        opacity: 0.4;
+      }
+
+      .shot {
+        position: relative;
+        margin: 64px auto 0;
+        max-width: 1140px;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--line-2);
+        box-shadow: 0 50px 120px rgba(0, 0, 0, 0.6);
+        background: #fff;
+      }
+      .shot img {
+        width: 100%;
+      }
+      .shot::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(180deg, rgba(8, 11, 18, 0.16), transparent 22%, transparent 76%, rgba(8, 11, 18, 0.3));
+      }
+
+      /* ---------- sections ---------- */
+      section {
+        padding: 92px 0;
+      }
+      .eyebrow {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: var(--blue);
+      }
+      h2 {
+        font-size: clamp(27px, 3.4vw, 40px);
+        letter-spacing: -1.1px;
+        line-height: 1.12;
+        margin: 14px 0 0;
+        max-width: 22ch;
+      }
+      .sec-sub {
+        color: var(--muted);
+        max-width: 58ch;
+        margin-top: 16px;
+        font-size: 17.5px;
+      }
+      .head {
+        margin-bottom: 46px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 18px;
+      }
+      .g3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .g2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .card {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: var(--radius);
+        padding: 26px 24px;
+        position: relative;
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+      }
+      .card h3 {
+        margin: 16px 0 8px;
+        font-size: 19px;
+        letter-spacing: -0.3px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15.5px;
+      }
+      .ico {
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(140deg, rgba(76, 120, 255, 0.22), rgba(139, 108, 255, 0.16));
+        border: 1px solid var(--line-2);
+        color: #c9d8ff;
+        font-size: 19px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 12px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--dim);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px 10px;
+      }
+
+      /* models */
+      .model {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: var(--radius);
+        padding: 22px;
+      }
+      .model .m-name {
+        font-weight: 700;
+        font-size: 16.5px;
+        letter-spacing: -0.2px;
+      }
+      .model .m-desc {
+        color: var(--muted);
+        font-size: 14.5px;
+        margin-top: 4px;
+      }
+      .model .m-ico {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        flex: none;
+        border: 1px solid var(--line-2);
+        background: var(--panel-2);
+        font-size: 17px;
+      }
+      .mono {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 13px;
+        color: #9fb6ff;
+      }
+
+      /* steps */
+      .steps {
+        counter-reset: step;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .step {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        padding: 24px;
+      }
+      .step::before {
+        counter-increment: step;
+        content: "0" counter(step);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        color: var(--blue);
+        letter-spacing: 1px;
+      }
+      .step h3 {
+        margin: 12px 0 8px;
+        font-size: 18px;
+      }
+      .step p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15.5px;
+      }
+
+      /* privacy band */
+      .band {
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(61, 220, 151, 0.05), transparent 70%);
+      }
+      .privacy {
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: 54px;
+        align-items: center;
+      }
+      .privacy ul {
+        list-style: none;
+        padding: 0;
+        margin: 26px 0 0;
+        display: grid;
+        gap: 14px;
+      }
+      .privacy li {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .privacy li b {
+        color: var(--text);
+        font-weight: 500;
+      }
+      .check {
+        color: var(--green);
+        flex: none;
+        margin-top: 2px;
+      }
+      .quote {
+        border: 1px solid var(--line-2);
+        border-radius: var(--radius);
+        background: var(--panel);
+        padding: 28px;
+      }
+      .quote p {
+        margin: 0;
+        font-size: 19px;
+        letter-spacing: -0.3px;
+      }
+      .quote .mono {
+        margin-top: 16px;
+        display: block;
+      }
+
+      /* gallery */
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+      }
+      .gallery figure {
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .gallery img {
+        width: 100%;
+      }
+      .gallery figcaption {
+        padding: 12px 16px;
+        font-size: 13.5px;
+        color: var(--dim);
+        background: var(--bg-2);
+        border-top: 1px solid var(--line);
+      }
+
+      /* faq */
+      details {
+        border-bottom: 1px solid var(--line);
+        padding: 20px 0;
+      }
+      summary {
+        cursor: pointer;
+        font-size: 17px;
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+      }
+      summary::-webkit-details-marker {
+        display: none;
+      }
+      summary::after {
+        content: "+";
+        color: var(--dim);
+        font-size: 22px;
+        line-height: 1;
+      }
+      details[open] summary::after {
+        content: "–";
+      }
+      details p {
+        margin: 14px 0 0;
+        color: var(--muted);
+        max-width: 70ch;
+        font-size: 16px;
+      }
+
+      /* install */
+      .install {
+        border: 1px solid var(--line-2);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+        padding: 44px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 44px;
+        align-items: center;
+      }
+      .steps-num {
+        counter-reset: n;
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .steps-num li {
+        counter-increment: n;
+        display: flex;
+        gap: 14px;
+        align-items: baseline;
+        color: var(--muted);
+        font-size: 15.5px;
+      }
+      .steps-num li::before {
+        content: counter(n);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--dim);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        width: 22px;
+        height: 22px;
+        display: inline-grid;
+        place-items: center;
+        flex: none;
+      }
+      code {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 2px 7px;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 46px 0 60px;
+        color: var(--dim);
+        font-size: 14px;
+      }
+      .foot-in {
+        display: flex;
+        gap: 22px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .foot-in nav {
+        display: flex;
+        gap: 20px;
+        margin-left: auto;
+        flex-wrap: wrap;
+      }
+      .foot-in a {
+        text-decoration: none;
+        color: var(--muted);
+      }
+      .foot-in a:hover {
+        color: var(--text);
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(18px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+      .reveal.in {
+        opacity: 1;
+        transform: none;
+      }
+
+      @media (max-width: 900px) {
+        .g3,
+        .steps,
+        .privacy,
+        .install,
+        .g2,
+        .gallery {
+          grid-template-columns: 1fr;
+        }
+        .nav-links {
+          display: none;
+        }
+        section {
+          padding: 66px 0;
+        }
+        .hero {
+          padding: 60px 0 48px;
+        }
+        .install {
+          padding: 28px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .reveal {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav-in">
+        <a class="brand" href="#top">
+          <img src="images/icon128.png" alt="" />
+          Smart LocalAI
+        </a>
+        <nav class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#models">Models</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <a class="btn btn-primary" data-store href="#install">Add to Chrome</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <div class="wrap">
+        <section class="hero">
+          <span class="pill"><span class="dot"></span> Free · source on GitHub · no account</span>
+          <h1>Your AI, in the sidebar — <span class="grad">on your machine.</span></h1>
+          <p class="lede">
+            Smart LocalAI talks to Chrome's built-in Gemini&nbsp;Nano, LM&nbsp;Studio or Ollama
+            beside the page you're reading. Ask it a question, or tell it to restyle the page —
+            every edit arrives as a card you approve.
+          </p>
+          <div class="cta-row">
+            <a class="btn btn-primary btn-lg" data-store href="#install">Add to Chrome</a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/nvkudva/Smart-LocalAI"
+              >Read the source</a
+            >
+          </div>
+          <p class="micro">
+            No API key needed with a local model <span>·</span> Works offline
+            <span>·</span> Nothing leaves your browser
+          </p>
+          <figure class="shot reveal">
+            <img src="images/hero.png" alt="Smart LocalAI open beside a pricing page, with the extension's suggestion chips in the side panel" />
+          </figure>
+        </section>
+
+        <section id="features">
+          <div class="head reveal">
+            <span class="eyebrow">What it does</span>
+            <h2>A side panel that can actually touch the page.</h2>
+            <p class="sec-sub">
+              Most assistants can only talk about a page. This one proposes the exact CSS or
+              DOM change, waits for you to approve it, and undoes it on request.
+            </p>
+          </div>
+          <div class="grid g3">
+            <article class="card reveal">
+              <div class="ico">◍</div>
+              <h3>Ask about any page</h3>
+              <p>
+                Chat with a local model and get answers with page citations — click a
+                citation and the page scrolls to the passage it came from.
+              </p>
+            </article>
+            <article class="card reveal">
+              <div class="ico">✎</div>
+              <h3>Restyle it, in words</h3>
+              <p>
+                “Make the headings blue, hide the cookie banner.” The model returns the
+                exact rule; you approve the card; the page changes. Undo is one click.
+              </p>
+            </article>
+            <article class="card reveal">
+              <div class="ico">▦</div>
+              <h3>Pull the data out</h3>
+              <p>
+                Prices, specs, tables — one ask and the page comes back as clean Markdown
+                you can copy into a sheet.
+              </p>
+            </article>
+            <article class="card reveal">
+              <div class="ico">◎</div>
+              <h3>Point at any element</h3>
+              <p>
+                Pick an element on the page and the agent targets it directly, so it edits
+                the thing you meant instead of guessing.
+              </p>
+            </article>
+            <article class="card reveal">
+              <div class="ico">⌘</div>
+              <h3>Fits your workflow</h3>
+              <p>
+                Right-click for “Ask Smart LocalAI”, a prompt library with
+                <code>/</code>, attachments, threads and per-chat exports.
+              </p>
+            </article>
+            <article class="card reveal">
+              <div class="ico">◈</div>
+              <h3>Yours to configure</h3>
+              <p>
+                Reasoning effort, theme, auto-summary, page context on or off, safe mode,
+                and a smart model pick that skips embedding and moderation models.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="models">
+          <div class="head reveal">
+            <span class="eyebrow">Models</span>
+            <h2>Bring your own model. Local ones come first.</h2>
+            <p class="sec-sub">
+              The extension talks to whichever endpoint you pick and detects local servers
+              automatically — no key, no account, no round trip to a cloud.
+            </p>
+          </div>
+          <div class="grid g2">
+            <div class="model reveal">
+              <div class="m-ico">✦</div>
+              <div>
+                <div class="m-name">Chrome built-in AI</div>
+                <div class="m-desc">
+                  Gemini Nano runs on-device with no key and nothing to install. Works if you
+                  have no local server at all.
+                </div>
+              </div>
+            </div>
+            <div class="model reveal">
+              <div class="m-ico">▤</div>
+              <div>
+                <div class="m-name">LM Studio</div>
+                <div class="m-desc">
+                  Auto-detected at <span class="mono">http://localhost:1234/v1</span>. Load a
+                  model in the GUI and it shows up in the picker.
+                </div>
+              </div>
+            </div>
+            <div class="model reveal">
+              <div class="m-ico">◐</div>
+              <div>
+                <div class="m-name">Ollama</div>
+                <div class="m-desc">
+                  Auto-detected at <span class="mono">http://localhost:11434</span>. Pull
+                  llama, qwen or mistral and pick it from the same menu.
+                </div>
+              </div>
+            </div>
+            <div class="model reveal">
+              <div class="m-ico">⇄</div>
+              <div>
+                <div class="m-name">Any OpenAI-compatible endpoint</div>
+                <div class="m-desc">
+                  Anthropic, OpenAI, Gemini, DeepSeek or your own gateway. Your key stays in
+                  this browser and is sent only to that endpoint.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head reveal">
+            <span class="eyebrow">How it works</span>
+            <h2>Three steps, and you are in control of step two.</h2>
+          </div>
+          <div class="steps">
+            <div class="step reveal">
+              <h3>Ask in plain words</h3>
+              <p>
+                Type it, pick a suggestion chip, or right-click a selection. Page context
+                rides along only while the <b>Page ✓</b> toggle is on.
+              </p>
+            </div>
+            <div class="step reveal">
+              <h3>Review the card</h3>
+              <p>
+                The model returns an action card with the exact payload — the CSS, the
+                selector, the value. Nothing runs until you press <b>Apply</b>.
+              </p>
+            </div>
+            <div class="step reveal">
+              <h3>Apply, or undo</h3>
+              <p>
+                The page changes in place. Every edit goes on an undo stack, so one click
+                puts the page back exactly as it was.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="privacy" class="band">
+          <div class="privacy">
+            <div class="reveal">
+              <span class="eyebrow" style="color: var(--green)">Privacy</span>
+              <h2>Nothing leaves your machine — unless you point it at a cloud model.</h2>
+              <ul>
+                <li>
+                  <span class="check">✓</span>
+                  <span><b>No telemetry, no analytics, no ads.</b> There are no servers. The project can't read your data because it never receives it.</span>
+                </li>
+                <li>
+                  <span class="check">✓</span>
+                  <span><b>Keys live in chrome.storage.local.</b> Your API key is stored in your browser profile and sent only to the endpoint you chose.</span>
+                </li>
+                <li>
+                  <span class="check">✓</span>
+                  <span><b>Page context is a toggle.</b> Turn <b>Page ✓</b> off and the page's text and DOM are not part of the request at all.</span>
+                </li>
+                <li>
+                  <span class="check">✓</span>
+                  <span><b>No model-generated code runs.</b> The agent can only use the fixed set of actions the panel lists — CSS, text, clicks, fills, removals.</span>
+                </li>
+              </ul>
+            </div>
+            <div class="quote reveal">
+              <p>
+                “Chat with a local model, restyle the page, pull the data out — and keep the
+                keys on your own machine.”
+              </p>
+              <span class="mono">chrome.storage.local · no remote code · no telemetry</span>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head reveal">
+            <span class="eyebrow">Screens</span>
+            <h2>The whole thing, end to end.</h2>
+          </div>
+          <div class="gallery">
+            <figure class="reveal">
+              <img src="images/panel.png" alt="The Smart LocalAI side panel with its suggestion chips" />
+              <figcaption>One click from the toolbar — the panel opens beside the page.</figcaption>
+            </figure>
+            <figure class="reveal">
+              <img src="images/approve.png" alt="A page action card with CSS payload and Apply button" />
+              <figcaption>Edits arrive as cards with the exact payload. Nothing runs silently.</figcaption>
+            </figure>
+            <figure class="reveal">
+              <img src="images/models.png" alt="Model provider dropdown listing Gemini Nano, LM Studio and Ollama" />
+              <figcaption>Local models are detected automatically; cloud ones need your key.</figcaption>
+            </figure>
+            <figure class="reveal">
+              <img src="images/table.png" alt="Pricing table extracted from a page into the chat" />
+              <figcaption>“Extract the pricing table” — one ask, clean Markdown.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="faq">
+          <div class="head reveal">
+            <span class="eyebrow">FAQ</span>
+            <h2>The questions people actually ask.</h2>
+          </div>
+          <div class="reveal">
+            <details>
+              <summary>Does it send my pages to a server?</summary>
+              <p>
+                Not if you use a local model. Chrome's built-in Gemini Nano runs on-device,
+                and LM Studio or Ollama are reached over localhost on your own machine. If you
+                point it at a cloud provider, the prompt and the page context you enabled go
+                to that provider under your own key — that provider's privacy policy applies.
+              </p>
+            </details>
+            <details>
+              <summary>Do I need an API key?</summary>
+              <p>
+                No. With Chrome's built-in AI, LM Studio or Ollama there is no key at all. A key
+                is only needed for the cloud providers, and it is stored in your browser
+                profile, never on a server.
+              </p>
+            </details>
+            <details>
+              <summary>Can it change my pages without asking?</summary>
+              <p>
+                No. Safe mode is on by default: every mutating action arrives as a card and
+                only runs when you press Apply. You can turn on auto-apply if you want it, and
+                every applied change stays undoable.
+              </p>
+            </details>
+            <details>
+              <summary>Which sites work?</summary>
+              <p>
+                Any normal page. Chrome blocks scripting on <code>chrome://</code> pages and
+                on the Web Store itself, so editing is disabled there — the chat still works.
+              </p>
+            </details>
+            <details>
+              <summary>Can I read the source?</summary>
+              <p>
+                Yes — the full source is on GitHub, built with React and Vite as a Manifest V3
+                extension, and packaged with a single build command.
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <section id="install">
+          <div class="install reveal">
+            <div>
+              <span class="eyebrow">Get it</span>
+              <h2 style="max-width: 18ch">Put it in your browser.</h2>
+              <p class="sec-sub">
+                It takes one click from the Chrome Web Store, or build it yourself in about a
+                minute.
+              </p>
+              <div class="cta-row" style="justify-content: flex-start; margin-top: 26px">
+                <a class="btn btn-primary btn-lg" data-store href="#install">Add to Chrome</a>
+                <a class="btn btn-ghost btn-lg" href="https://github.com/nvkudva/Smart-LocalAI"
+                  >Source on GitHub</a
+                >
+              </div>
+            </div>
+            <div>
+              <span class="tag">Or build from source</span>
+              <ol class="steps-num" style="margin-top: 16px">
+                <li>Run <code>bun install</code> and <code>bun run build</code></li>
+                <li>Open <code>chrome://extensions</code> and enable Developer mode</li>
+                <li>Choose <b>Load unpacked</b> and pick the <code>dist</code> folder</li>
+                <li>Click the toolbar icon — or press <code>Ctrl/Cmd+Shift+Y</code></li>
+              </ol>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <div class="wrap foot-in">
+        <a class="brand" href="#top" style="font-size: 16px">
+          <img src="images/icon128.png" alt="" style="width: 24px; height: 24px" />
+          Smart LocalAI
+        </a>
+        <nav>
+          <a href="https://github.com/nvkudva/Smart-LocalAI">Source</a>
+          <a href="privacy.html">Privacy policy</a>
+          <a href="https://github.com/nvkudva/Smart-LocalAI/issues">Support</a>
+        </nav>
+        <span>Not affiliated with Google.</span>
+      </div>
+    </footer>
+
+    <script>
+      // Store URL. Swap this one constant when the listing is published.
+      const STORE_URL = "https://github.com/nvkudva/Smart-LocalAI#install";
+      document.querySelectorAll("[data-store]").forEach((el) => {
+        el.setAttribute("href", STORE_URL);
+      });
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("in");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.12 },
+      );
+      document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+    </script>
+  </body>
+</html>

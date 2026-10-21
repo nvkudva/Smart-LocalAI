@@ -137,6 +137,10 @@ export default function SettingsDrawer({
                 value={endpoint.apiKey}
               />
             </Field>
+            <div className="model-results">
+              Keys stay in this browser. Prompts and page context are sent only to the
+              endpoint above — a local one if you picked one.
+            </div>
             <div className="row model-row">
               <Field
                 hint={availableModels.length ? `${availableModels.length} model${availableModels.length === 1 ? "" : "s"}` : null}
