@@ -4,8 +4,6 @@
   "short_name": "SmartLocalAI",
   "version": "1.0.0",
   "homepage_url": "https://nvkudva.github.io/Smart-LocalAI/",
-  "support_url": "https://github.com/nvkudva/Smart-LocalAI/issues",
-  "bugs": "https://github.com/nvkudva/Smart-LocalAI/issues",
   "description": "Chat in a Gemini-style sidebar and restyle the page you are on with Chrome's built-in AI, LM Studio, Ollama, or any LLM endpoint.",
   "minimum_chrome_version": "116",
   "icons": {
