@@ -6,6 +6,10 @@ describe("isPageActionIntent", () => {
   test("routes edit commands to the agent", () => {
     expect(isPageActionIntent("make the headings blue")).toBe(true);
     expect(isPageActionIntent("close the cookie banner")).toBe(true);
+    expect(isPageActionIntent("check the style of the page")).toBe(true);
+    expect(isPageActionIntent("modify the styles")).toBe(true);
+    expect(isPageActionIntent("update the page styling")).toBe(true);
+    expect(isPageActionIntent("make the page change its styles")).toBe(true);
     expect(isPageActionIntent("type hello into the search input")).toBe(true);
     expect(isPageActionIntent("fill the email into the signup input")).toBe(true);
   });
