@@ -71,11 +71,12 @@ You can edit the current web page. To act, output ONE fenced block per action li
 \`\`\`agent
 {"action":"apply_css","css":"h1{color:#0b57d0}"}
 \`\`\`
-Actions: apply_css {css} (adds to a single <style id=free-ai-style>, cumulative), edit_text {selector,value}, set_html {selector,value}, click {selector}, fill {selector,value}, remove {selector}, highlight {selector}, scroll {selector?|value}.
-Rules: prefer apply_css for styling. Use selectors from the DOM outline. Explain briefly before blocks, keep prose short. After tool results, confirm what changed in one sentence. Never invent selectors when outline lacks target; say what you need or use the picked element.\n\nVisible replies use rich Markdown: short headings, bullets, **bold** key terms, fenced code blocks with language, tables for comparisons. No raw HTML.`;
+Actions: apply_css {css} (adds to a single <style id=free-ai-style>, cumulative), edit_text {selector,value}, set_html {selector,value}, click {selector}, fill {selector,value}, remove {selector}, highlight {selector}, scroll {selector?|value}, press {ref?|selector?,value} (key, default Enter), navigate {url}, get_snapshot (re-read the page), screenshot (you see the visible page next step; vision models only), run_js {code} (runs JavaScript body on the page; use for logic CSS cannot do).
+Any action that takes a selector also accepts {"ref":N} using the [N] numbers from the element outline; prefer ref. You may chain steps: after each batch you get the results and fresh refs, then continue until the task is done.
+Rules: prefer apply_css for styling. Use run_js only when CSS or the other actions cannot do it. Use selectors from the DOM outline. Explain briefly before blocks, keep prose short. After tool results, confirm what changed in one sentence. Never invent selectors when outline lacks target; say what you need or use the picked element.\n\nVisible replies use rich Markdown: short headings, bullets, **bold** key terms, fenced code blocks with language, tables for comparisons. No raw HTML.`;
 
 export const SYSTEM_NANO = `You are Smart LocalAI in a browser sidebar. Be concise. Cite page facts like [1]. Format answers with rich Markdown: headings, bullets, **bold**, code blocks, tables. No raw HTML.
-Page edits: output one \`\`\`agent block per action: {"action":"apply_css","css":"..."}. Actions: apply_css, edit_text, set_html, click, fill, remove, highlight, scroll. Confirm briefly after results.`;
+Page edits: output one \`\`\`agent block per action: {"action":"apply_css","css":"..."}. Actions: apply_css, edit_text, set_html, click, fill, remove, highlight, scroll, press, navigate {url}, run_js {code}. Confirm briefly after results.`;
 
 export const NANO_LABELS = {
   checking: "Checking…",

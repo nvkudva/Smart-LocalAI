@@ -24,9 +24,11 @@ export function snapshotInPage() {
   }
   const outline = [];
   const nodes = document.querySelectorAll("h1,h2,h3,a,button,input,textarea,select,[role=button],header,nav,main,article,section");
-  for (const el of Array.from(nodes).slice(0, 120)) {
+  // Each listed element gets a short ref the model can use instead of a fragile selector.
+  for (const [i, el] of Array.from(nodes).slice(0, 120).entries()) {
+    el.setAttribute("data-ai-ref", String(i + 1));
     const text = (el.innerText || el.value || el.getAttribute("aria-label") || "").trim().replace(/\s+/g, " ").slice(0, 80);
-    outline.push(`${el.tagName.toLowerCase()} ${selectorFor(el)}${text ? ` "${text}"` : ""}`);
+    outline.push(`[${i + 1}] ${el.tagName.toLowerCase()} ${selectorFor(el)}${text ? ` "${text}"` : ""}`);
   }
   const selection = String(window.getSelection ? window.getSelection() : "").slice(0, 2000);
   return {
@@ -41,6 +43,7 @@ export function snapshotInPage() {
 
 export function executeInPage(action) {
   window.__freeAiUndo = window.__freeAiUndo || [];
+  if (action.ref) action.selector = `[data-ai-ref="${String(action.ref).replace(/\D/g, "")}"]`;
   function find(selector) {
     if (!selector) return null;
     try { return document.querySelector(selector); } catch { return null; }
@@ -103,6 +106,17 @@ export function executeInPage(action) {
       el.dispatchEvent(new Event("input", { bubbles: true }));
       el.dispatchEvent(new Event("change", { bubbles: true }));
       return { ok: true, message: `Filled ${describe(el)}` };
+    }
+    if (kind === "press") {
+      const el = find(action.selector) || document.activeElement || document.body;
+      const key = action.value || "Enter";
+      for (const type of ["keydown", "keyup"]) el.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
+      if (key === "Enter" && el.form) el.form.requestSubmit();
+      return { ok: true, message: `Pressed ${key} on ${describe(el)}` };
+    }
+    if (kind === "run_js") {
+      const result = new Function(action.code || "")();
+      return { ok: true, message: `Ran JS${result === undefined ? "" : `: ${String(result).slice(0, 200)}`}` };
     }
     if (kind === "scroll") {
       const el = action.selector ? find(action.selector) : null;
