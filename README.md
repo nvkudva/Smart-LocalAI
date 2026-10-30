@@ -33,11 +33,32 @@ To produce the uploadable package, run `bun run package` — it builds `dist/` a
 
 - Mode **Agent** (default): say `make headings blue`, `hide the cookie banner`, `change the CTA text to Buy now`. The model emits action blocks; each shows as a card with payload.
 - **Safe mode** (default on): mutating actions need **Apply**. Turn off in Settings for auto-apply. Read-only actions run free.
-- Actions: `apply_css`, `edit_text`, `set_html`, `click`, `fill`, `remove`, `highlight`, `scroll`.
+- Actions: `apply_css`, `edit_text`, `set_html`, `click`, `fill`, `press`, `remove`, `highlight`, `scroll`, `navigate`, `screenshot`, `run_js`. Any selector can be replaced by `{"ref":N}`, the numbers in the page outline.
+- `screenshot` sends the visible tab to vision models on the next step.
 - **◎ Pick** — click any element on the page to target it. **↩ Undo** rolls back edits (stack kept in page). **Page ✓** toggles whether page text/DOM outline is sent as context.
 - Suggestion chips: Summarize, Dark mode, Readability, Extract data, Remove distractions.
 - Right-click: *Ask Smart LocalAI* on selected text, *Summarize this page* on any page.
 - Blocked on `chrome://` and Web Store pages (Chrome forbids scripting there); chat still works.
+
+### How the agent loop works
+
+```mermaid
+flowchart TD
+    A[User message] --> B[Detect intent<br/>isPageActionIntent]
+    B --> C[Snapshot page<br/>tags elements with N]
+    C --> D[Call model<br/>streamChat]
+    D -->|no action blocks| H[Final answer]
+    D --> E[Parse actions<br/>agent JSON blocks]
+    E --> F[Approve<br/>mutating actions only]
+    F --> G[Execute action<br/>executeAction]
+    G --> I[Extension APIs<br/>navigate, screenshot]
+    G --> J[Injected script<br/>click, fill, css, press]
+    I --> K[Feed back, repeat<br/>max 8 loops]
+    J --> K
+    K --> D
+```
+
+Code: `src/app/useChatLoop.js` (loop), `src/page/pageAgent.js` (parse and execute), `src/page/injectedPage.js` (in-page actions).
 
 ## Cool extras
 

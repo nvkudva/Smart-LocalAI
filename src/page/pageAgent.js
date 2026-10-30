@@ -21,7 +21,31 @@ function isRestrictedPage(url) {
     return results[0].result;
   }
 
+  // Waits for the tab to finish loading, giving up after 10s.
+  function navigate(tabId, url) {
+    return new Promise((resolve) => {
+      const done = (result) => {
+        chrome.tabs.onUpdated.removeListener(onUpdated);
+        resolve(result);
+      };
+      const onUpdated = (id, info) => {
+        if (id === tabId && info.status === "complete") done({ ok: true, message: `Navigated to ${url}` });
+      };
+      chrome.tabs.onUpdated.addListener(onUpdated);
+      setTimeout(() => done({ ok: true, message: `Navigating to ${url} (still loading)` }), 10000);
+      chrome.tabs.update(tabId, { url }).catch((error) => done({ ok: false, message: error.message }));
+    });
+  }
+
   async function executeAction(tabId, action) {
+    if (action.action === "navigate") {
+      if (!/^https?:\/\//i.test(action.url || "")) return { ok: false, message: "navigate needs an http(s) url" };
+      return navigate(tabId, action.url);
+    }
+    if (action.action === "screenshot") {
+      const dataUrl = await chrome.tabs.captureVisibleTab({ format: "jpeg", quality: 70 });
+      return { ok: true, message: "Screenshot captured", dataUrl };
+    }
     const results = await chrome.scripting.executeScript({ target: { tabId }, func: executeInPage, args: [action] });
     return results[0].result || { ok: false, message: "No result" };
   }
@@ -36,7 +60,7 @@ function isRestrictedPage(url) {
     return results[0].result;
   }
 
-  const READ_ONLY = new Set(["get_snapshot", "highlight", "scroll"]);
+  const READ_ONLY = new Set(["get_snapshot", "highlight", "scroll", "screenshot"]);
 
   function parseAgentActions(text) {
     const actions = [];

@@ -212,7 +212,7 @@ export function useChatLoop({
       const startedAt = performance.now();
 
       try {
-        for (let iteration = 0; iteration < 5; iteration += 1) {
+        for (let iteration = 0; iteration < 8; iteration += 1) {
           const modelName = modelLabel(active.provider, active.model);
           streamBufferRef.current = "";
           streamFlushRef.current = 0;
@@ -249,20 +249,22 @@ export function useChatLoop({
           }
           if (abort.signal.aborted) break;
           const refreshedSnapshot = await page.refreshPage();
+          const feedback =
+            `[Page action results]\n${results
+              .map((result) => `- ${result.action}: ${result.ok ? "OK" : "FAIL"} — ${result.message}`)
+              .join("\n")}` +
+            (refreshedSnapshot
+              ? `\n\nUpdated page text (truncated):\n${refreshedSnapshot.text.slice(0, 3000)}\n\nUpdated element refs:\n${refreshedSnapshot.outline}`
+              : "") +
+            "\nIf the task is complete, reply with a brief confirmation and NO action blocks. Do not repeat actions.";
+          const canSee = modelCapabilities(active.model, active.provider.protocol, active.visionOverride).vision;
+          const shots = results.filter((result) => result.dataUrl && canSee);
+          const images = shots.map((result) => ({ kind: "image", name: "screenshot.jpg", dataUrl: result.dataUrl }));
+          const note = results.some((result) => result.dataUrl) && !canSee ? "\n(This model can't see images; screenshot ignored.)" : "";
           requestMessages = [
             ...requestMessages,
             { role: "assistant", content: answer },
-            {
-              role: "user",
-              content:
-                `[Page action results]\n${results
-                  .map((result) => `- ${result.action}: ${result.ok ? "OK" : "FAIL"} — ${result.message}`)
-                  .join("\n")}` +
-                (refreshedSnapshot
-                  ? `\n\nUpdated page text (truncated):\n${refreshedSnapshot.text.slice(0, 3000)}`
-                  : "") +
-                "\nIf the task is complete, reply with a brief confirmation and NO action blocks. Do not repeat actions.",
-            },
+            userMessageWithAttachments(feedback + note, images, active.provider.protocol).message,
           ];
           if (results.every((result) => !result.ok)) break;
         }
